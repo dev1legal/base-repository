@@ -2,7 +2,7 @@
   <a href="./README.md">English</a> | <a href="./README.ko.md">한국어</a>
 </div>
 
-# Base Repository Library
+# Base Repository
 
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-informational)
 ![License](https://img.shields.io/github/license/4jades/base-repository)
