@@ -54,6 +54,9 @@ def _scenario_family_and_variant(scenario: str) -> tuple[str, str]:
 
 def _safe(name: str) -> str:
     s = re.sub(r"[^a-zA-Z0-9._-]+", "_", name.strip())
+    s = s.lstrip("_.")
+    if not s:
+        s = "scenario"
     return s[:180] if len(s) > 180 else s
 
 
