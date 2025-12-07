@@ -17,7 +17,7 @@ Once you inherit from `BaseRepository`, you can use create/read/update/delete ri
 - If you need custom repo methods, you can add them in your project and extend freely.
 - Supports introducing a Mapper for conversions between Pydantic schemas and SQLAlchemy ORM models.
 
-# Supported Dependency Versions
+## Supported Dependency Versions
 
 The table below lists the minimum required versions for each supported dependency.
 
