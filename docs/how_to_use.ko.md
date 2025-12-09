@@ -492,9 +492,8 @@ class UserMapper(BaseMapper):
     def to_orm(self, dm: UserSchema) -> User:
         return User(**dm.model_dump(exclude=["name"]), name="fixed")
 
-class UserRepo(BaseRepository[User]):
+class UserRepo(BaseRepository[User, UserSchema]):
     filter_class = UserFilter
-    mapping_schema = UserSchema
     mapper = UserMapper
 
 row = await repo.get(UserFilter(id=1))
@@ -514,9 +513,8 @@ ORM 모델 컬럼 이름의 1:1 일치 여부를 검증하지 않습니다.
 동작 요약
 
 ```python
-class UserRepo(BaseRepository[User]):
+class UserRepo(BaseRepository[User, UserSchema]):
     filter_class = UserFilter
-    mapping_schema = UserSchema
     mapper = UserMapper  # mapper가 존재하면 column-only strict 검증 비활성화
 ```
 

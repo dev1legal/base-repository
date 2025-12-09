@@ -492,9 +492,8 @@ class UserMapper(BaseMapper):
     def to_orm(self, dm: UserSchema) -> User:
         return User(**dm.model_dump(exclude=["name"]), name="fixed")
 
-class UserRepo(BaseRepository[User]):
+class UserRepo(BaseRepository[User, UserSchema]):
     filter_class = UserFilter
-    mapping_schema = UserSchema
     mapper = UserMapper
 
 row = await repo.get(UserFilter(id=1))
@@ -514,9 +513,8 @@ Intent
 Summary
 
 ```python
-class UserRepo(BaseRepository[User]):
+class UserRepo(BaseRepository[User, UserSchema]):
     filter_class = UserFilter
-    mapping_schema = UserSchema
     mapper = UserMapper  # if mapper exists, column-only strict validation is disabled
 ```
 
