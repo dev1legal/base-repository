@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any
 
 from sqlalchemy import ClauseElement, Select, and_, or_, tuple_
 from sqlalchemy.sql.elements import ColumnElement, UnaryExpression
@@ -126,7 +126,7 @@ class KeysetStrategy:
         base: list[ColumnElement[Any]] = []
         for c in cols:
             if isinstance(c, UnaryExpression):
-                base.append(cast(ColumnElement[Any], c.element))
+                base.append(c.element)
             else:
                 base.append(c)
         return base

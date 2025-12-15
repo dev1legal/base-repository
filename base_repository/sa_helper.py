@@ -11,5 +11,5 @@ def sa_mapper(model: type[Any]) -> Mapper[Any]:
 def peel_unary(expr: ColumnElement[Any]) -> ColumnElement[Any]:
     base = expr
     while isinstance(base, UnaryExpression):
-        base = cast(ColumnElement[Any], base.element)
+        base = base.element
     return base

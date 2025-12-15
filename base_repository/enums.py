@@ -9,7 +9,7 @@ class StatementType(str, Enum):
     UPDATE = 'update'
     DELETE = 'delete'
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
     @classmethod

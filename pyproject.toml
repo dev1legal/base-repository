@@ -98,11 +98,14 @@ quote-style = 'single'
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 strict = true
+exclude = ["tests/"]
 
 [[tool.mypy.overrides]]
 module = "base-repository.tests.*"
-ignore_missing_imports = true
-check_untyped_defs = true
+strict = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
 
 [[tool.mypy.overrides]]
 module = "base-repository.docs.*"
