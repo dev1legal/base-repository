@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import builtins
 from collections.abc import Mapping, Sequence
-from typing import Annotated, Any, Generic, List, cast, get_args
+from typing import Annotated, Any, Generic, cast, get_args
 
 from pydantic import BaseModel
 from sqlalchemy import Integer, Update, delete, func, select
 from sqlalchemy import update as sa_update
 from sqlalchemy.engine import ScalarResult
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapper, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Mapper
 from sqlalchemy.sql import Select
 from typing_extensions import Doc
+
 from base_repository.base_filter import BaseRepoFilter
 from base_repository.base_mapper import BaseMapper
 from base_repository.query.converter import query_to_stmt
@@ -36,15 +38,14 @@ class BaseRepository(Generic[TModel, TSchema]):
         (`mapping_schema.model_config.from_attributes=True` is enforced by `validate_schema_base()`.)
     """
 
-
     _session_provider: SessionProvider | None = None
 
     # Class configuration fields (to be set by subclasses)
     model: Annotated[
         type[TModel],
         Doc(
-            "Target SQLAlchemy ORM model class. Usually inferred from the generic type argument, "
-            "but can be explicitly declared in the subclass."
+            'Target SQLAlchemy ORM model class. Usually inferred from the generic type argument, '
+            'but can be explicitly declared in the subclass.'
         ),
     ]
     mapping_schema: Annotated[
@@ -53,17 +54,16 @@ class BaseRepository(Generic[TModel, TSchema]):
     ] = None
     filter_class: Annotated[
         type[BaseRepoFilter],
-        Doc("Filter class for building default WHERE criteria. Dataclass-based filters are recommended."),
+        Doc('Filter class for building default WHERE criteria. Dataclass-based filters are recommended.'),
     ]
     mapper: Annotated[
         type[BaseMapper] | None,
-        Doc("Optional mapper class. If provided, it will take precedence for schema/ORM conversions."),
+        Doc('Optional mapper class. If provided, it will take precedence for schema/ORM conversions.'),
     ] = None
     _default_convert_schema: Annotated[
         bool,
-        Doc("Default return type flag. True returns schema(Pydantic) by default, False returns ORM objects."),
+        Doc('Default return type flag. True returns schema(Pydantic) by default, False returns ORM objects.'),
     ] = False
-
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """
@@ -83,7 +83,7 @@ class BaseRepository(Generic[TModel, TSchema]):
         inferred_model: type[DeclarativeBase] | None = None
         inferred_schema: type[BaseModel] | None = None
 
-        for base in getattr(cls, "__orig_bases__", []):
+        for base in getattr(cls, '__orig_bases__', []):
             args = get_args(base)
             if not args:
                 continue
@@ -96,37 +96,36 @@ class BaseRepository(Generic[TModel, TSchema]):
                 if isinstance(schema_arg, type) and issubclass(schema_arg, BaseModel):
                     inferred_schema = schema_arg
 
-        if not hasattr(cls, "model") and inferred_model is not None:
+        if not hasattr(cls, 'model') and inferred_model is not None:
             cls.model = cast(type[TModel], inferred_model)
 
-        if getattr(cls, "mapping_schema", None) is None and inferred_schema is not None:
+        if getattr(cls, 'mapping_schema', None) is None and inferred_schema is not None:
             cls.mapping_schema = cast(type[TSchema], inferred_schema)
 
-        if getattr(cls, "mapping_schema", None) is not None:
+        if getattr(cls, 'mapping_schema', None) is not None:
             schema = cast(type[BaseModel], cls.mapping_schema)
             validate_schema_base(schema)
             cls._default_convert_schema = True
-
 
     def __init__(
         self,
         session: Annotated[
             AsyncSession | None,
-            Doc("AsyncSession to bind initially. If None, bind later via set_session() (lazy binding)."),
+            Doc('AsyncSession to bind initially. If None, bind later via set_session() (lazy binding).'),
         ] = None,
         *,
         mapper: Annotated[
             BaseMapper | None,
             Doc(
-                "Optionally inject a BaseMapper instance. If omitted, instantiate the class-level `mapper` "
-                "(if configured)."
+                'Optionally inject a BaseMapper instance. If omitted, instantiate the class-level `mapper` '
+                '(if configured).'
             ),
         ] = None,
         default_convert_schema: Annotated[
             bool | None,
             Doc(
-                "Default return type when the caller does not specify convert_schema. "
-                "True=schema, False=ORM. If None, use the class default."
+                'Default return type when the caller does not specify convert_schema. '
+                'True=schema, False=ORM. If None, use the class default.'
             ),
         ] = None,
     ):
@@ -157,46 +156,42 @@ class BaseRepository(Generic[TModel, TSchema]):
 
         if default_convert_schema is not None:
             if default_convert_schema and self.mapping_schema is None:
-                raise ValueError("default_convert_schema=True is not allowed without mapping_schema.")
+                raise ValueError('default_convert_schema=True is not allowed without mapping_schema.')
             self._default_convert_schema = default_convert_schema
 
         if session is not None and self._session_provider is not None:
             import warnings
 
             warnings.warn(
-                "[BaseRepository] Repository-level session was provided via __init__, "
-                "but a SessionProvider is also configured. The SessionProvider takes precedence, "
-                "and the repository-level session will be ignored.",
+                '[BaseRepository] Repository-level session was provided via __init__, '
+                'but a SessionProvider is also configured. The SessionProvider takes precedence, '
+                'and the repository-level session will be ignored.',
                 stacklevel=2,
             )
         elif session is not None:
             import warnings
 
             warnings.warn(
-                "[BaseRepository] Repository-level session was provided via __init__. "
+                '[BaseRepository] Repository-level session was provided via __init__. '
                 "Stale or closed session handling is the caller's responsibility.",
                 stacklevel=2,
             )
-
 
     @classmethod
     def configure_session_provider(cls, provider: SessionProvider) -> None:
         cls._session_provider = provider
 
-
     @property
     def session(self) -> AsyncSession:
         if self._session_provider is None:
             if self._specific_session is None:
-                raise RuntimeError("Neither SessionProvider nor specific_session is configured.")
+                raise RuntimeError('Neither SessionProvider nor specific_session is configured.')
             return self._specific_session
 
         return self._session_provider.get_session()
-    
 
     def _resolve_session(self, session: AsyncSession | None) -> AsyncSession:
         return session if session is not None else self.session
-    
 
     def _validate_mapper_integrity(self, mapper_instance: BaseMapper) -> None:
         """
@@ -204,10 +199,7 @@ class BaseRepository(Generic[TModel, TSchema]):
         and can handle this Repository's model type.
         """
         if not isinstance(mapper_instance, BaseMapper):
-            raise TypeError(
-                f"The injected mapper ({type(mapper_instance).__name__}) must inherit from BaseMapper."
-            )
-
+            raise TypeError(f'The injected mapper ({type(mapper_instance).__name__}) must inherit from BaseMapper.')
 
     def _validate_schema_against_model(self, schema: type[BaseModel]) -> None:
         """
@@ -222,10 +214,9 @@ class BaseRepository(Generic[TModel, TSchema]):
         missing = required - model_column_names
         if missing:
             raise TypeError(
-                f"[Strict] Required schema fields must map to model columns only: missing={missing} "
-                f"(model={self.model.__name__})"
+                f'[Strict] Required schema fields must map to model columns only: missing={missing} '
+                f'(model={self.model.__name__})'
             )
-
 
     def _autoinc_pk_keys(self) -> set[str]:
         """
@@ -237,19 +228,18 @@ class BaseRepository(Generic[TModel, TSchema]):
         """
         keys: set[str] = set()
         for col in self.sa_mapper.columns:
-            if not getattr(col, "primary_key", False):
+            if not getattr(col, 'primary_key', False):
                 continue
-            if not isinstance(getattr(col, "type", None), Integer):
+            if not isinstance(getattr(col, 'type', None), Integer):
                 continue
-            if getattr(col, "autoincrement", None) is True:
+            if getattr(col, 'autoincrement', None) is True:
                 keys.add(col.key)
         return keys
 
-
     def _schema_payload(
         self,
-        data: Annotated[BaseModel | Mapping[str, Any], Doc("Pydantic model or mapping input.")],
-    ) -> Annotated[dict[str, Any], Doc("Payload sanitized to model columns only.")]:
+        data: Annotated[BaseModel | Mapping[str, Any], Doc('Pydantic model or mapping input.')],
+    ) -> Annotated[dict[str, Any], Doc('Payload sanitized to model columns only.')]:
         """
         Normalize schema/mapping input into a **model-columns-only payload**.
 
@@ -267,11 +257,10 @@ class BaseRepository(Generic[TModel, TSchema]):
             payload.pop(k, None)  # ignore client input for autoincrement PKs
         return payload
 
-
     def _schema_to_orm(
         self,
-        data: Annotated[BaseModel | Mapping[str, Any], Doc("schema(Pydantic) or mapping input.")],
-    ) -> Annotated[TModel, Doc("Final ORM model instance.")]:
+        data: Annotated[BaseModel | Mapping[str, Any], Doc('schema(Pydantic) or mapping input.')],
+    ) -> Annotated[TModel, Doc('Final ORM model instance.')]:
         """
         Convert input data into an **ORM model instance**.
 
@@ -289,14 +278,8 @@ class BaseRepository(Generic[TModel, TSchema]):
 
         payload = self._schema_payload(data)
         return self.model(**payload)
-    
 
-    def _convert(
-        self,
-        row: TModel,
-        *,
-        convert_schema: bool | None = None
-    ) -> TSchema | TModel:
+    def _convert(self, row: TModel, *, convert_schema: bool | None = None) -> TSchema | TModel:
         """
         Convert ORM → schema (Pydantic).
 
@@ -320,11 +303,10 @@ class BaseRepository(Generic[TModel, TSchema]):
 
         return cast(TSchema, cast(type[BaseModel], schema).model_validate(row))
 
- 
     def list(
         self,
-        flt: Annotated[BaseRepoFilter | None, Doc("Initial WHERE filter (optional). None means no conditions.")] = None,
-    ) -> Annotated[ListQuery[TModel], Doc("ListQuery DSL entrypoint (where/order_by/paging/with_cursor/limit).")]:
+        flt: Annotated[BaseRepoFilter | None, Doc('Initial WHERE filter (optional). None means no conditions.')] = None,
+    ) -> Annotated[ListQuery[TModel], Doc('ListQuery DSL entrypoint (where/order_by/paging/with_cursor/limit).')]:
         """
         Create a `ListQuery` and start the **chained query DSL**.
 
@@ -335,13 +317,12 @@ class BaseRepository(Generic[TModel, TSchema]):
         """
         return ListQuery[TModel](self.model, flt=flt)
 
-
     async def execute(
         self,
-        q_or_stmt: Annotated[QueryOrStmt[TModel], Doc("ListQuery or SQLAlchemy Core statement.")],
+        q_or_stmt: Annotated[QueryOrStmt[TModel], Doc('ListQuery or SQLAlchemy Core statement.')],
         *,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag. None uses default.")] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag. None uses default.')] = None,
     ) -> Any:
         """
         Execute a `ListQuery` or a SQLAlchemy statement and return results in the final shape (schema/ORM).
@@ -355,17 +336,20 @@ class BaseRepository(Generic[TModel, TSchema]):
         rows: list[TModel] = list(scalars)
         return [self._convert(r, convert_schema=convert_schema) for r in rows]
 
-
     async def get_list(
         self,
         *,
-        flt: Annotated[BaseRepoFilter | None, Doc("WHERE filter (optional).")] = None,
-        order_by: Annotated[Sequence[Any] | None, Doc("Ordering (optional). Supports str/column/asc()/desc(), etc.")] = None,
-        cursor: Annotated[dict[str, Any] | None, Doc("Cursor dict for keyset paging. None/{} means first page.")] = None,
-        page: Annotated[int | None, Doc("Offset paging: page number (>=1).")] = None,
-        size: Annotated[int | None, Doc("Common page size for offset/cursor (>=1).")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
+        flt: Annotated[BaseRepoFilter | None, Doc('WHERE filter (optional).')] = None,
+        order_by: Annotated[
+            Sequence[Any] | None, Doc('Ordering (optional). Supports str/column/asc()/desc(), etc.')
+        ] = None,
+        cursor: Annotated[
+            dict[str, Any] | None, Doc('Cursor dict for keyset paging. None/{} means first page.')
+        ] = None,
+        page: Annotated[int | None, Doc('Offset paging: page number (>=1).')] = None,
+        size: Annotated[int | None, Doc('Common page size for offset/cursor (>=1).')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
     ) -> Any:
         """
         Convenience method: builds a ListQuery internally and executes it.
@@ -386,7 +370,7 @@ class BaseRepository(Generic[TModel, TSchema]):
             # {} allowed: first page for keyset paging
             q.with_cursor(cursor)
             if size is None:
-                raise ValueError("Keyset paging requires limit(size).")
+                raise ValueError('Keyset paging requires limit(size).')
             q.limit(size)
         elif page is not None and size is not None:
             q.paging(page=page, size=size)
@@ -394,14 +378,13 @@ class BaseRepository(Generic[TModel, TSchema]):
         s = self._resolve_session(session)
         return await self.execute(q, session=s, convert_schema=convert_schema)
 
-
     async def get(
         self,
-        flt: Annotated[BaseRepoFilter, Doc("WHERE filter for single-row lookup.")],
+        flt: Annotated[BaseRepoFilter, Doc('WHERE filter for single-row lookup.')],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-    ) -> Annotated[Any | None, Doc("Returns ORM/schema object if found, otherwise None.")]:
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+    ) -> Annotated[Any | None, Doc('Returns ORM/schema object if found, otherwise None.')]:
         """
         Get a single row. Returns the first matching row.
         """
@@ -415,14 +398,13 @@ class BaseRepository(Generic[TModel, TSchema]):
         obj = res.scalars().first()
         return self._convert(obj, convert_schema=convert_schema) if obj else None
 
-
     async def get_or_fail(
         self,
-        flt: Annotated[BaseRepoFilter, Doc("WHERE filter for required single-row lookup.")],
+        flt: Annotated[BaseRepoFilter, Doc('WHERE filter for required single-row lookup.')],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-    ) -> Annotated[Any, Doc("Always returns an object; raises ValueError if not found.")]:
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+    ) -> Annotated[Any, Doc('Always returns an object; raises ValueError if not found.')]:
         """
         Get a single row (required). Raises ValueError if not found.
         """
@@ -433,16 +415,15 @@ class BaseRepository(Generic[TModel, TSchema]):
             session=s,
         )
         if not obj:
-            raise ValueError(f"{self.model.__name__} not found with filter={flt}")
+            raise ValueError(f'{self.model.__name__} not found with filter={flt}')
         return obj
-
 
     async def count(
         self,
-        flt: Annotated[BaseRepoFilter | None, Doc("WHERE filter for aggregation (optional).")] = None,
+        flt: Annotated[BaseRepoFilter | None, Doc('WHERE filter for aggregation (optional).')] = None,
         *,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-    ) -> Annotated[int, Doc("Number of rows matching the condition.")]:
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+    ) -> Annotated[int, Doc('Number of rows matching the condition.')]:
         """
         Return row count based on the given condition.
         """
@@ -455,13 +436,12 @@ class BaseRepository(Generic[TModel, TSchema]):
         res = await s.execute(stmt)
         return res.scalar_one()
 
-
     async def delete(
         self,
-        flt: Annotated[BaseRepoFilter, Doc("WHERE filter for delete target.")],
+        flt: Annotated[BaseRepoFilter, Doc('WHERE filter for delete target.')],
         *,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-    ) -> Annotated[int, Doc("Number of deleted rows (rowcount).")]:
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+    ) -> Annotated[int, Doc('Number of deleted rows (rowcount).')]:
         """
         Delete by condition. Returns affected row count.
         """
@@ -470,12 +450,11 @@ class BaseRepository(Generic[TModel, TSchema]):
         res = await s.execute(stmt)
         return res.rowcount or 0  # type: ignore[attr-defined]
 
-
     def add(
         self,
-        obj: Annotated[TModel, Doc("ORM object to add to the session.")],
+        obj: Annotated[TModel, Doc('ORM object to add to the session.')],
         *,
-        session: Annotated[AsyncSession | None, Doc("Session to use (optional).")] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use (optional).')] = None,
     ) -> None:
         """
         Add an ORM object to the session. (flush/commit is controlled by the caller)
@@ -483,12 +462,11 @@ class BaseRepository(Generic[TModel, TSchema]):
         s = self._resolve_session(session)
         s.add(obj)
 
-
     def add_all(
         self,
-        objs: Annotated[Sequence[TModel], Doc("Sequence of ORM objects to add to the session.")],
+        objs: Annotated[Sequence[TModel], Doc('Sequence of ORM objects to add to the session.')],
         *,
-        session: Annotated[AsyncSession | None, Doc("Session to use (optional).")] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use (optional).')] = None,
     ) -> None:
         """
         Add multiple ORM objects to the session.
@@ -496,13 +474,12 @@ class BaseRepository(Generic[TModel, TSchema]):
         s = self._resolve_session(session)
         s.add_all(objs)
 
-
     async def create(
         self,
-        data: Annotated[BaseModel | Mapping[str, Any], Doc("Pydantic schema or dict/mapping.")],
+        data: Annotated[BaseModel | Mapping[str, Any], Doc('Pydantic schema or dict/mapping.')],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
     ) -> Any:
         """
         Create a single row and `flush()`.
@@ -520,15 +497,16 @@ class BaseRepository(Generic[TModel, TSchema]):
         await s.flush()
         return self._convert(obj, convert_schema=convert_schema)
 
-
     async def create_many(
         self,
-        items: Annotated[Sequence[BaseModel | Mapping[str, Any]], Doc("Batch create input (each item is schema or dict).")],
+        items: Annotated[
+            Sequence[BaseModel | Mapping[str, Any]], Doc('Batch create input (each item is schema or dict).')
+        ],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-        skip_convert: Annotated[bool, Doc("If True, skip schema conversion and return ORM objects as-is.")] = False,
-    ) -> Annotated[List[Any], Doc("Created objects list (schema/ORM).")]:
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+        skip_convert: Annotated[bool, Doc('If True, skip schema conversion and return ORM objects as-is.')] = False,
+    ) -> Annotated[builtins.list[Any], Doc('Created objects list (schema/ORM).')]:
         """
         Create multiple rows and `flush()`.
 
@@ -544,13 +522,12 @@ class BaseRepository(Generic[TModel, TSchema]):
             return objs
         return [self._convert(o, convert_schema=convert_schema) for o in objs]
 
-
     async def create_from_model(
         self,
-        obj: Annotated[TModel, Doc("A fully constructed ORM model instance.")],
+        obj: Annotated[TModel, Doc('A fully constructed ORM model instance.')],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
     ) -> Any:
         """
         Insert an **ORM model instance as-is** + `flush()`.
@@ -565,13 +542,14 @@ class BaseRepository(Generic[TModel, TSchema]):
         await s.flush()
         return self._convert(obj, convert_schema=convert_schema)
 
-
     async def update(
         self,
-        flt: Annotated[BaseRepoFilter, Doc("WHERE filter for update target.")],
-        update: Annotated[Mapping[str, Any] | BaseModel, Doc("Values to update (schema or dict). Sanitized to columns-only.")],
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
-    ) -> Annotated[int, Doc("Number of updated rows (rowcount).")]:
+        flt: Annotated[BaseRepoFilter, Doc('WHERE filter for update target.')],
+        update: Annotated[
+            Mapping[str, Any] | BaseModel, Doc('Values to update (schema or dict). Sanitized to columns-only.')
+        ],
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
+    ) -> Annotated[int, Doc('Number of updated rows (rowcount).')]:
         """
         Update rows immediately with a single SQL UPDATE, without loading rows into memory.
 
@@ -592,14 +570,15 @@ class BaseRepository(Generic[TModel, TSchema]):
         res = await s.execute(stmt)
         return res.rowcount or 0  # type: ignore[attr-defined]
 
-
     async def update_from_model(
         self,
-        base: Annotated[TModel, Doc("A persistent ORM object in the session (Dirty Checking target).")],
-        update: Annotated[Mapping[str, Any] | BaseModel, Doc("Values to update (schema or dict). Sanitized to columns-only.")],
+        base: Annotated[TModel, Doc('A persistent ORM object in the session (Dirty Checking target).')],
+        update: Annotated[
+            Mapping[str, Any] | BaseModel, Doc('Values to update (schema or dict). Sanitized to columns-only.')
+        ],
         *,
-        convert_schema: Annotated[bool | None, Doc("Per-call schema conversion flag.")] = None,
-        session: Annotated[AsyncSession | None, Doc("Session to use for execution (optional).")] = None,
+        convert_schema: Annotated[bool | None, Doc('Per-call schema conversion flag.')] = None,
+        session: Annotated[AsyncSession | None, Doc('Session to use for execution (optional).')] = None,
     ) -> Any:
         """
         Update a persistent ORM model using Dirty Checking.

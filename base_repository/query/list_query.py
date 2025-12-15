@@ -11,8 +11,7 @@ from typing_extensions import Doc
 from base_repository.base_filter import BaseRepoFilter
 from base_repository.repo_types import TModel
 
-from .strategies import KeysetStrategy, OrderByStrategy, OffsetStrategy
-
+from .strategies import KeysetStrategy, OffsetStrategy, OrderByStrategy
 
 
 class PagingMode(Enum):
@@ -99,7 +98,6 @@ class ListQuery(Generic[TModel]):
         self._offset_size: int | None = None
         self._sealed: bool = False
 
-
     def _ensure_mutable(self) -> None:
         """
         Check whether the query is sealed (no longer mutable).
@@ -113,8 +111,7 @@ class ListQuery(Generic[TModel]):
             If you try to mutate an already sealed ListQuery.
         """
         if self._sealed:
-            raise RuntimeError("This query has already been used. Create a new ListQuery.")
-
+            raise RuntimeError('This query has already been used. Create a new ListQuery.')
 
     def where(self, flt: BaseRepoFilter | None) -> ListQuery[TModel]:
         """
@@ -148,10 +145,9 @@ class ListQuery(Generic[TModel]):
         if flt is None:
             return self
         if self._filter is not None:
-            raise ValueError("where() can be called only once. Combine conditions in BaseRepoFilter.")
+            raise ValueError('where() can be called only once. Combine conditions in BaseRepoFilter.')
         self._filter = flt
         return self
-
 
     def order_by(self, items: Sequence[ColumnElement[Any]]) -> ListQuery[TModel]:
         """
@@ -177,10 +173,9 @@ class ListQuery(Generic[TModel]):
         """
         self._ensure_mutable()
         if self._mode is PagingMode.CURSOR:
-            raise ValueError("In cursor mode, order_by() must be called before setting the cursor.")
+            raise ValueError('In cursor mode, order_by() must be called before setting the cursor.')
         self._order_items = items
         return self
-
 
     def with_cursor(self, cursor: dict[str, Any] | None = None) -> ListQuery[TModel]:
         """
@@ -198,15 +193,14 @@ class ListQuery(Generic[TModel]):
         self._ensure_mutable()
 
         if self._mode is PagingMode.OFFSET:
-            raise ValueError("Offset paging and cursor paging cannot be used together.")
+            raise ValueError('Offset paging and cursor paging cannot be used together.')
 
         if not self._order_items:
-            raise ValueError("Cursor paging requires order_by().")
+            raise ValueError('Cursor paging requires order_by().')
 
         self._cursor = {} if cursor is None else cursor
         self._mode = PagingMode.CURSOR
         return self
-
 
     def limit(self, size: int) -> ListQuery[TModel]:
         """
@@ -237,12 +231,11 @@ class ListQuery(Generic[TModel]):
         """
         self._ensure_mutable()
         if size <= 0:
-            raise ValueError("limit(size) must be >= 1.")
+            raise ValueError('limit(size) must be >= 1.')
         if self._mode is PagingMode.OFFSET:
-            raise ValueError("Offset paging and cursor paging cannot be used together.")
+            raise ValueError('Offset paging and cursor paging cannot be used together.')
         self._cursor_size = size
         return self
-
 
     def paging(self, *, page: int, size: int) -> ListQuery[TModel]:
         """
@@ -258,46 +251,52 @@ class ListQuery(Generic[TModel]):
         """
         self._ensure_mutable()
         if self._mode is PagingMode.CURSOR or self._cursor is not None:
-            raise ValueError("paging(page, size) cannot be used in cursor mode.")
+            raise ValueError('paging(page, size) cannot be used in cursor mode.')
         if self._mode is PagingMode.OFFSET and (self._page is not None or self._offset_size is not None):
-            raise ValueError("paging() can be called only once.")
+            raise ValueError('paging() can be called only once.')
         if size <= 0:
-            raise ValueError("size must be >= 1.")
+            raise ValueError('size must be >= 1.')
         self._page = page
         self._offset_size = size
         self._mode = PagingMode.OFFSET
         return self
 
-
     @property
-    def filter(self) -> Annotated[BaseRepoFilter | None, Doc("The current BaseRepoFilter (or None if unset).")]:
+    def filter(self) -> Annotated[BaseRepoFilter | None, Doc('The current BaseRepoFilter (or None if unset).')]:
         return self._filter
 
     @property
-    def order_items(self) -> Annotated[
+    def order_items(
+        self,
+    ) -> Annotated[
         Sequence[ColumnElement[Any]] | None,
-        Doc("The user-provided ORDER BY items. They are normalized by OrderByStrategy."),
+        Doc('The user-provided ORDER BY items. They are normalized by OrderByStrategy.'),
     ]:
         return self._order_items
 
     @property
-    def cursor(self) -> Annotated[dict[str, Any] | None, Doc("Cursor dictionary used in CURSOR paging. None before call with_cursor(), first page {}.")]:
+    def cursor(
+        self,
+    ) -> Annotated[
+        dict[str, Any] | None,
+        Doc('Cursor dictionary used in CURSOR paging. None before call with_cursor(), first page {}.'),
+    ]:
         return self._cursor
 
     @property
-    def mode(self) -> Annotated[PagingMode, Doc("Current paging mode (NONE / OFFSET / CURSOR).")]:
+    def mode(self) -> Annotated[PagingMode, Doc('Current paging mode (NONE / OFFSET / CURSOR).')]:
         return self._mode
 
     @property
-    def cursor_size(self) -> Annotated[int | None, Doc("The limit value for CURSOR paging (or None if unset).")]:
+    def cursor_size(self) -> Annotated[int | None, Doc('The limit value for CURSOR paging (or None if unset).')]:
         return self._cursor_size
 
     @property
-    def page(self) -> Annotated[int | None, Doc("The page number for OFFSET paging (or None if unset).")]:
+    def page(self) -> Annotated[int | None, Doc('The page number for OFFSET paging (or None if unset).')]:
         return self._page
 
     @property
-    def offset_size(self) -> Annotated[int | None, Doc("The page size for OFFSET paging (or None if unset).")]:
+    def offset_size(self) -> Annotated[int | None, Doc('The page size for OFFSET paging (or None if unset).')]:
         return self._offset_size
 
 
@@ -395,9 +394,9 @@ def _apply_paging(
     """
     if q.mode is PagingMode.CURSOR:
         if q.cursor is None:
-            raise ValueError("Cursor mode requires with_cursor(cursor).")
+            raise ValueError('Cursor mode requires with_cursor(cursor).')
         if q.cursor_size is None:
-            raise ValueError("Cursor mode requires limit(size).")
+            raise ValueError('Cursor mode requires limit(size).')
         return KeysetStrategy.apply(
             stmt,
             order_cols=order_cols,
@@ -407,7 +406,7 @@ def _apply_paging(
 
     if q.mode is PagingMode.OFFSET:
         if q.page is None or q.offset_size is None:
-            raise ValueError("Offset mode requires paging(page, size).")
+            raise ValueError('Offset mode requires paging(page, size).')
         return OffsetStrategy.apply(stmt, page=q.page, size=q.offset_size)
 
     # PagingMode.NONE: no paging

@@ -1,26 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import lru_cache
-from typing import Any, Awaitable, Callable, cast
-from sqlalchemy.ext.asyncio import AsyncSession
-import pytest
 import statistics
 import time
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from functools import cache
+from typing import Any, cast
+
+import pytest
 from pydantic import BaseModel
-from sqlmodel import SQLModel, Field
 from sqlalchemy import ColumnElement, Table, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import Field, SQLModel
 
 from base_repository.base_filter import BaseRepoFilter
 from base_repository.repository.base_repo import BaseRepository
 from tests.perf.perf_reporter import record_table
-from ..fakes import FakeAsyncSession, FakeResult
-from ..models import Item, Category, Result
-from ..schemas import ResultStrictSchema
 
+from ..fakes import FakeAsyncSession, FakeResult
+from ..models import Category, Item, Result
+from ..schemas import ResultStrictSchema
 
 ROW_VALUES = [10, 50, 100, 200, 500, 1000, 5000]
 ITERATIONS = 50
+
 
 # -------------------------------------------------------------------
 # 공통 Filter / Repo
@@ -50,6 +53,7 @@ class DMLOnlySession(FakeAsyncSession):
     UPDATE 계열 벤치용 세션:
     - execute() 에서 FakeResult만 돌려주고, script 소진 검사를 하지 않는다.
     """
+
     def __init__(self) -> None:
         super().__init__(script=[])
 
@@ -60,8 +64,8 @@ class DMLOnlySession(FakeAsyncSession):
 def build_result_rows(n: int) -> list[Result]:
     rows: list[Result] = []
     for i in range(n):
-        item = Item(id=i, name=f"item-{i}")
-        category = Category(id=i, title=f"category-{i}")
+        item = Item(id=i, name=f'item-{i}')
+        category = Category(id=i, title=f'category-{i}')
         result = Result(
             id=i,
             item_id=item.id,
@@ -84,7 +88,8 @@ class ResultSQLModel(SQLModel, table=True):
     - 실제 DB는 안 붙지만, SQLAlchemy에서 select(ResultSQLModel)이 가능하려면
       table=True로 매핑된 모델이어야 한다.
     """
-    __tablename__ = "result_sqlmodel_bench"
+
+    __tablename__ = 'result_sqlmodel_bench'
 
     id: int | None = Field(default=None, primary_key=True)
     item_id: int = Field()
@@ -115,22 +120,22 @@ def build_sqlmodel_rows(n: int) -> list[ResultSQLModel]:
 # -------------------------------------------------------------------
 # 캐시: result rows / sqlmodel rows / FakeResult
 # -------------------------------------------------------------------
-@lru_cache(maxsize=None)
+@cache
 def cached_result_rows(n: int) -> list[Result]:
     return build_result_rows(n)
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_sqlmodel_rows(n: int) -> list[ResultSQLModel]:
     return build_sqlmodel_rows(n)
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_fake_result_orm(n: int) -> FakeResult:
     return FakeResult(rows=cached_result_rows(n))
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_fake_result_sqlmodel(n: int) -> FakeResult:
     return FakeResult(rows=cached_sqlmodel_rows(n))
 
@@ -147,24 +152,24 @@ class ResultCreateSchema(BaseModel):
     checkup_id: int
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_create_payloads_dict(n: int) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
     for i in range(n):
         payloads.append(
             {
-                "item_id": i,
-                "sub_category_id": i,
-                "result_value": str(i),
-                "is_abnormal": (i % 2 == 0),
-                "tenant_id": 1,
-                "checkup_id": 1,
+                'item_id': i,
+                'sub_category_id': i,
+                'result_value': str(i),
+                'is_abnormal': (i % 2 == 0),
+                'tenant_id': 1,
+                'checkup_id': 1,
             }
         )
     return payloads
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_create_payloads_schema(n: int) -> list[ResultCreateSchema]:
     payloads: list[ResultCreateSchema] = []
     for i in range(n):
@@ -181,7 +186,7 @@ def cached_create_payloads_schema(n: int) -> list[ResultCreateSchema]:
     return payloads
 
 
-@lru_cache(maxsize=None)
+@cache
 def cached_create_models(n: int) -> list[Result]:
     # create_from_model / update_from_model 시나리오용 ORM 인스턴스
     return build_result_rows(n)
@@ -190,7 +195,7 @@ def cached_create_models(n: int) -> list[Result]:
 # -------------------------------------------------------------------
 # UPDATE 용 payload 캐시
 # -------------------------------------------------------------------
-@lru_cache(maxsize=None)
+@cache
 def cached_update_payloads_dict(n: int) -> list[dict[str, Any]]:
     """
     각 id에 대해 변경할 필드 payload
@@ -199,8 +204,8 @@ def cached_update_payloads_dict(n: int) -> list[dict[str, Any]]:
     for i in range(n):
         payloads.append(
             {
-                "result_value": f"updated-{i}",
-                "is_abnormal": bool(i % 2),
+                'result_value': f'updated-{i}',
+                'is_abnormal': bool(i % 2),
             }
         )
     return payloads
@@ -209,22 +214,11 @@ def cached_update_payloads_dict(n: int) -> list[dict[str, Any]]:
 # -------------------------------------------------------------------
 # 전역 SELECT 문 캐싱
 # -------------------------------------------------------------------
-SELECT_RESULT = (
-    select(Result)
-    .order_by(Result.id.asc())
-    .limit(50)
-    .offset(0)
-)
-
+SELECT_RESULT = select(Result).order_by(Result.id.asc()).limit(50).offset(0)
 
 
 id_col = cast(ColumnElement[Any], ResultSQLModel.id)
-SELECT_RESULT_SQLMODEL = (
-    select(ResultSQLModel)
-    .order_by(id_col.asc())
-    .limit(50)
-    .offset(0)
-)
+SELECT_RESULT_SQLMODEL = select(ResultSQLModel).order_by(id_col.asc()).limit(50).offset(0)
 
 
 # -------------------------------------------------------------------
@@ -250,36 +244,26 @@ async def run_benchmark(
         p99 = samples_sorted[int(len(samples_sorted) * 0.99)]
 
         results[row] = {
-            "avg": statistics.mean(samples_ms),
-            "p95": p95,
-            "p99": p99,
+            'avg': statistics.mean(samples_ms),
+            'p95': p95,
+            'p99': p99,
         }
 
     return results
 
 
-
 def print_table(title: str, rows: dict[int, dict[str, float]], iter: int) -> None:
     print()
-    print(f"=== {title} ===")
-    print(f"{'ROW':>6} | {'AVG(ms)':>10} | {'P95(ms)':>10} | {'P99(ms)':>10}")
-    print("-" * 46)
+    print(f'=== {title} ===')
+    print(f'{"ROW":>6} | {"AVG(ms)":>10} | {"P95(ms)":>10} | {"P99(ms)":>10}')
+    print('-' * 46)
     for row, metrics in rows.items():
-        print(
-            f"{row:>6} | "
-            f"{metrics['avg']:>10.4f} | "
-            f"{metrics['p95']:>10.4f} | "
-            f"{metrics['p99']:>10.4f}"
-        )
+        print(f'{row:>6} | {metrics["avg"]:>10.4f} | {metrics["p95"]:>10.4f} | {metrics["p99"]:>10.4f}')
 
     record_table(
-        suite="cpu",
-        source="tests/perf/perf_cpu_only.py",
-        scenario=title,
-        key_label="ROW",
-        metrics=rows,
-        iter=iter
+        suite='cpu', source='tests/perf/perf_cpu_only.py', scenario=title, key_label='ROW', metrics=rows, iter=iter
     )
+
 
 # -------------------------------------------------------------------
 # 시나리오: GET_LIST (여러 rows 조회)
@@ -295,10 +279,7 @@ async def GET_LIST__bench_sa_pipeline(n: int) -> float:
     t0 = time.perf_counter()
     res = await session.execute(stmt)
     rows = list(res.scalars())
-    _ = [
-        ResultStrictSchema.model_validate(row, from_attributes=True)
-        for row in rows
-    ]
+    _ = [ResultStrictSchema.model_validate(row, from_attributes=True) for row in rows]
     t1 = time.perf_counter()
 
     return t1 - t0
@@ -315,10 +296,7 @@ async def GET_LIST__bench_sqlmodel_pipeline(n: int) -> float:
     t0 = time.perf_counter()
     res = await session.execute(stmt)
     rows = list(res.scalars())
-    _ = [
-        ResultSQLModel.model_validate(row, from_attributes=True)
-        for row in rows
-    ]
+    _ = [ResultSQLModel.model_validate(row, from_attributes=True) for row in rows]
     t1 = time.perf_counter()
 
     return t1 - t0
@@ -441,10 +419,7 @@ async def CREATE_MANY__sa_from_schema(n: int) -> float:
     payloads = cached_create_payloads_schema(n)
 
     t0 = time.perf_counter()
-    objs = [
-        Result(**p.model_dump(exclude_unset=True))
-        for p in payloads
-    ]
+    objs = [Result(**p.model_dump(exclude_unset=True)) for p in payloads]
     session.add_all(objs)
     await session.flush()
     t1 = time.perf_counter()
@@ -524,11 +499,7 @@ async def UPDATE__sa_plain(n: int) -> float:
 
     t0 = time.perf_counter()
     for i in range(n):
-        stmt = (
-            table.update()
-            .where(Result.id == i)
-            .values(**payloads[i])
-        )
+        stmt = table.update().where(Result.id == i).values(**payloads[i])
         await session.execute(stmt)
     t1 = time.perf_counter()
     return t1 - t0
@@ -603,21 +574,21 @@ async def UPDATE_FROM_MODEL__repo(n: int) -> float:
 # BENCH 시나리오 모음
 # -------------------------------------------------------------------
 BENCH_SCENARIOS: dict[str, Callable[[int], Awaitable[float]]] = {
-    "[TEST fetch multiple rows scenario] - sqlalchemy": GET_LIST__bench_sa_pipeline,
-    "[TEST fetch multiple rows scenario] - baserepo": GET_LIST__bench_repo_pipeline,
-    "[TEST convert model to schema scenario] - pydantic": SCHEMA_CONVERT__pydantic,
-    "[TEST convert model to schema scenario] - sqlmodel": SCHEMA_CONVERT__sqlmodel,
-    "[TEST convert model to schema scenario] - baserepo": SCHEMA_CONVERT__baserepo,
-    "[TEST bulk create from dict scenario] - sqlalchemy": CREATE_MANY__sa_from_dict,
-    "[TEST bulk create from dict scenario] - baserepo": CREATE_MANY__repo_from_dict,
-    "[TEST bulk create from schema scenario] - sqlalchemy": CREATE_MANY__sa_from_schema,
-    "[TEST bulk create from schema scenario] - baserepo": CREATE_MANY__repo_from_schema,
-    "[TEST bulk create from model scenario] - sqlalchemy": CREATE_FROM_MODEL__sa,
-    "[TEST bulk create from model scenario] - baserepo": CREATE_FROM_MODEL__repo,
-    "[TEST bulk update from dict scenario] - sqlalchemy": UPDATE__sa_plain,
-    "[TEST bulk update from dict scenario] - baserepo": UPDATE__repo_update,
-    "[TEST bulk update from model scenario] - sqlalchemy": UPDATE_FROM_MODEL__sa,
-    "[TEST bulk update from model scenario] - baserepo": UPDATE_FROM_MODEL__repo,
+    '[TEST fetch multiple rows scenario] - sqlalchemy': GET_LIST__bench_sa_pipeline,
+    '[TEST fetch multiple rows scenario] - baserepo': GET_LIST__bench_repo_pipeline,
+    '[TEST convert model to schema scenario] - pydantic': SCHEMA_CONVERT__pydantic,
+    '[TEST convert model to schema scenario] - sqlmodel': SCHEMA_CONVERT__sqlmodel,
+    '[TEST convert model to schema scenario] - baserepo': SCHEMA_CONVERT__baserepo,
+    '[TEST bulk create from dict scenario] - sqlalchemy': CREATE_MANY__sa_from_dict,
+    '[TEST bulk create from dict scenario] - baserepo': CREATE_MANY__repo_from_dict,
+    '[TEST bulk create from schema scenario] - sqlalchemy': CREATE_MANY__sa_from_schema,
+    '[TEST bulk create from schema scenario] - baserepo': CREATE_MANY__repo_from_schema,
+    '[TEST bulk create from model scenario] - sqlalchemy': CREATE_FROM_MODEL__sa,
+    '[TEST bulk create from model scenario] - baserepo': CREATE_FROM_MODEL__repo,
+    '[TEST bulk update from dict scenario] - sqlalchemy': UPDATE__sa_plain,
+    '[TEST bulk update from dict scenario] - baserepo': UPDATE__repo_update,
+    '[TEST bulk update from model scenario] - sqlalchemy': UPDATE_FROM_MODEL__sa,
+    '[TEST bulk update from model scenario] - baserepo': UPDATE_FROM_MODEL__repo,
 }
 
 
@@ -627,7 +598,6 @@ BENCH_SCENARIOS: dict[str, Callable[[int], Awaitable[float]]] = {
 @pytest.mark.asyncio
 @pytest.mark.perf_cpu
 async def test_performance_suite() -> None:
-
     for title, scenario in BENCH_SCENARIOS.items():
         results = await run_benchmark(scenario, ROW_VALUES, iterations=ITERATIONS)
         print_table(title, results, iter=ITERATIONS)

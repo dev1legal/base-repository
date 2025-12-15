@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+
 class BaseMapper(ABC):
     """
     Mapping interface between ORM objects and schema objects (Pydantic schemas).

@@ -22,7 +22,7 @@ class FakeResult:
         return self._rows[0] if self._rows else None
 
     def scalar_one(self) -> int:
-        assert self._count is not None, "need to inject scalar_one() response"
+        assert self._count is not None, 'need to inject scalar_one() response'
         return self._count
 
     # joinedload(컬렉션) 대비용 - 필요 시 사용
@@ -48,7 +48,7 @@ class FakeAsyncSession:
         self.flushed: bool = False
 
     async def execute(self, stmt: Any) -> FakeResult:
-        assert self._i < len(self._script), "FakeAsyncSession script exhausted."
+        assert self._i < len(self._script), 'FakeAsyncSession script exhausted.'
         res = self._script[self._i]
         self._i += 1
         return res

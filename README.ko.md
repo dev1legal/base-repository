@@ -1,6 +1,6 @@
 <div align="right">
   <a href="./README.md">English</a> | <a href="./README.ko.md">한국어</a>
-</div>    
+</div>
 
 # Base Repository
 
@@ -91,7 +91,7 @@ class UserRepo(BaseRepository[UserModel, UserSchema]):
 
 ### 2) 세션 제공자(SessionProvider) 연결하기
 
-Repo가 사용할 `AsyncSession`을 프로젝트에서 어떻게 가져올지 정합니다.  
+Repo가 사용할 `AsyncSession`을 프로젝트에서 어떻게 가져올지 정합니다.
 권장 방식은 `SessionProvider`를 한 번 주입해, Repo가 필요할 때 세션을 가져가게 하는 것입니다.
 
 ```python
@@ -111,7 +111,7 @@ BaseRepository.configure_session_provider(MysqlSessionProvider())
 ```python
 async with AsyncSession(engine) as session:
     repo = UserRepo(session)
-```    
+```
 
 또는, 메소드 호출 시점에 세션을 직접 넘겨도 됩니다.
 

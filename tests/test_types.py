@@ -18,27 +18,27 @@ def test_repo_types_version_branch_is_covered(monkeypatch) -> None:
     5. Sanity-check exported symbols exist.
     """
     # 1
-    sys.modules.pop("base_repository.repo_types", None)
-    sys.modules.pop("typing_extensions", None)
+    sys.modules.pop('base_repository.repo_types', None)
+    sys.modules.pop('typing_extensions', None)
 
     # 2
     want_ge_313 = sys.version_info < (3, 13)
 
     # 3
     if want_ge_313:
-        monkeypatch.setattr(sys, "version_info", (3, 13, 0))
-        monkeypatch.setattr(typing, "TypeVar", lambda *args, **kwargs: object(), raising=False)
+        monkeypatch.setattr(sys, 'version_info', (3, 13, 0))
+        monkeypatch.setattr(typing, 'TypeVar', lambda *args, **kwargs: object(), raising=False)
     else:
-        monkeypatch.setattr(sys, "version_info", (3, 12, 0))
+        monkeypatch.setattr(sys, 'version_info', (3, 12, 0))
 
-        fake_te = types.ModuleType("typing_extensions")
-        fake_te.TypeVar = lambda *args, **kwargs: object() # type: ignore[attr-defined]
-        monkeypatch.setitem(sys.modules, "typing_extensions", fake_te)
+        fake_te = types.ModuleType('typing_extensions')
+        fake_te.TypeVar = lambda *args, **kwargs: object()  # type: ignore[attr-defined]
+        monkeypatch.setitem(sys.modules, 'typing_extensions', fake_te)
 
     # 4
-    mod = importlib.import_module("base_repository.repo_types")
+    mod = importlib.import_module('base_repository.repo_types')
 
     # 5
-    assert hasattr(mod, "TModel")
-    assert hasattr(mod, "TSchema")
-    assert hasattr(mod, "QueryOrStmt")
+    assert hasattr(mod, 'TModel')
+    assert hasattr(mod, 'TSchema')
+    assert hasattr(mod, 'QueryOrStmt')

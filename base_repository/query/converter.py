@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy import Select
 
-from .list_query import ListQuery, _build_list_query
 from base_repository.repo_types import QueryOrStmt, TModel
+
+from .list_query import ListQuery, _build_list_query
 
 
 def query_to_stmt(
@@ -30,4 +31,4 @@ def query_to_stmt(
     # if isinstance(q_or_stmt, DeleteQuery):
     #     return build_delete_query(q_or_stmt)
 
-    raise TypeError(f"Unsupported query/statement type: {type(q_or_stmt)}")
+    raise TypeError(f'Unsupported query/statement type: {type(q_or_stmt)}')

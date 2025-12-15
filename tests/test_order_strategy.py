@@ -20,47 +20,51 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, aliased, relationship
 from sqlalchemy.sql.elements import UnaryExpression
 
-from base_repository.query.strategies.order_by import OrderByStrategy
 import base_repository.query.strategies.order_by as order_by_mod
+from base_repository.query.strategies.order_by import OrderByStrategy
 
 
 # Base ORM setup for tests
 class Base(DeclarativeBase):
     pass
 
+
 # Test model: User (single PK)
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = 'user'
 
-    id = Column("id", Integer, primary_key=True)
-    name = Column("name", String(50), nullable=False)
-    org_id = Column("org_id", Integer, nullable=False)
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50), nullable=False)
+    org_id = Column('org_id', Integer, nullable=False)
 
-    posts = relationship("Post", back_populates="user")
+    posts = relationship('Post', back_populates='user')
+
 
 # Test model: Post (FK to User)
 class Post(Base):
-    __tablename__ = "post"
+    __tablename__ = 'post'
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     title = Column(String(100), nullable=False)
 
-    user = relationship("User", back_populates="posts")
+    user = relationship('User', back_populates='posts')
+
 
 # Test model: Composite primary key
 class CompositePK(Base):
-    __tablename__ = "composite_pk"
+    __tablename__ = 'composite_pk'
 
     tenant_id = Column(Integer, primary_key=True)
     item_id = Column(Integer, primary_key=True)
     value = Column(String(20), nullable=False)
 
+
 # Enum inputs for order_by
 class UserOrder(enum.Enum):
-    ID = "id"
-    NAME = "name"
-    ORG = "org_id"
+    ID = 'id'
+    NAME = 'name'
+    ORG = 'org_id'
 
 
 # -------------------------------
@@ -83,10 +87,10 @@ def order_clause(sql: str) -> str:
     2. Return the captured part (trimmed), or empty string if not present.
     """
     # 1
-    m = re.search(r"\bORDER BY\b(.+)$", sql, re.IGNORECASE)
+    m = re.search(r'\bORDER BY\b(.+)$', sql, re.IGNORECASE)
 
     # 2
-    return (m.group(1).strip() if m else "").strip()
+    return (m.group(1).strip() if m else '').strip()
 
 
 # -------------------------------
@@ -100,7 +104,7 @@ def test_string_key_normalizes_to_column() -> None:
     3. Ensure the generated ORDER BY does not contain DESC.
     """
     # 1
-    cols = OrderByStrategy.apply(User, ["id"])
+    cols = OrderByStrategy.apply(User, ['id'])
 
     # 2
     assert len(cols) == 1
@@ -108,7 +112,7 @@ def test_string_key_normalizes_to_column() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert "id" in oc and "DESC" not in oc
+    assert 'id' in oc and 'DESC' not in oc
 
 
 def test_enum_value_normalizes_to_column() -> None:
@@ -127,7 +131,7 @@ def test_enum_value_normalizes_to_column() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert "id" in oc and "DESC" not in oc
+    assert 'id' in oc and 'DESC' not in oc
 
 
 def test_instrumented_attribute_is_allowed() -> None:
@@ -146,7 +150,7 @@ def test_instrumented_attribute_is_allowed() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert "user.id" in oc or "id" in oc
+    assert 'user.id' in oc or 'id' in oc
 
 
 def test_unary_expression_preserves_direction_desc() -> None:
@@ -170,7 +174,7 @@ def test_unary_expression_preserves_direction_desc() -> None:
     # 4
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bid\b.*\bDESC\b", oc, re.IGNORECASE)
+    assert re.search(r'\bid\b.*\bDESC\b', oc, re.IGNORECASE)
 
 
 def test_unary_expression_preserves_direction_asc() -> None:
@@ -194,7 +198,7 @@ def test_unary_expression_preserves_direction_asc() -> None:
     # 4
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bname\b(?!.*DESC)", oc, re.IGNORECASE)
+    assert re.search(r'\bname\b(?!.*DESC)', oc, re.IGNORECASE)
 
 
 def test_mixed_inputs_are_normalized_and_validated() -> None:
@@ -205,7 +209,7 @@ def test_mixed_inputs_are_normalized_and_validated() -> None:
     3. Ensure DESC is present only where requested.
     """
     # 1
-    cols = OrderByStrategy.apply(User, ["id", User.name.desc(), UserOrder.ORG])
+    cols = OrderByStrategy.apply(User, ['id', User.name.desc(), UserOrder.ORG])
 
     # 2
     assert len(cols) == 3
@@ -213,9 +217,9 @@ def test_mixed_inputs_are_normalized_and_validated() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bid\b(?![^,]*DESC)", oc, re.IGNORECASE)
-    assert re.search(r"\bname\b[^,]*\bDESC\b", oc, re.IGNORECASE)
-    assert re.search(r"\borg_id\b(?![^,]*DESC)", oc, re.IGNORECASE)
+    assert re.search(r'\bid\b(?![^,]*DESC)', oc, re.IGNORECASE)
+    assert re.search(r'\bname\b[^,]*\bDESC\b', oc, re.IGNORECASE)
+    assert re.search(r'\borg_id\b(?![^,]*DESC)', oc, re.IGNORECASE)
 
 
 def test_duplicates_collapse_to_first_entry() -> None:
@@ -226,7 +230,7 @@ def test_duplicates_collapse_to_first_entry() -> None:
     3. Ensure the remaining one corresponds to the first directive (ASC by default here).
     """
     # 1
-    cols = OrderByStrategy.apply(User, ["id", User.id.desc(), UserOrder.ID, User.id.asc()])
+    cols = OrderByStrategy.apply(User, ['id', User.id.desc(), UserOrder.ID, User.id.asc()])
 
     # 2
     assert len(cols) == 1
@@ -234,7 +238,7 @@ def test_duplicates_collapse_to_first_entry() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bid\b(?!.*DESC)", oc, re.IGNORECASE)
+    assert re.search(r'\bid\b(?!.*DESC)', oc, re.IGNORECASE)
 
 
 def test_invalid_string_field_raises() -> None:
@@ -245,7 +249,7 @@ def test_invalid_string_field_raises() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, ["does_not_exist"])
+        OrderByStrategy.apply(User, ['does_not_exist'])
 
 
 def test_invalid_enum_value_raises() -> None:
@@ -254,9 +258,10 @@ def test_invalid_enum_value_raises() -> None:
     1. Define a Bad Enum with a non-existent column key.
     2. Assert ValueError.
     """
+
     # 1
     class Bad(enum.Enum):
-        BAD = "does_not_exist"
+        BAD = 'does_not_exist'
 
     # 2
     with pytest.raises(ValueError):
@@ -269,6 +274,7 @@ def test_invalid_enum_non_string_value_rejected() -> None:
     1. Define an Enum whose value is not a str.
     2. Assert ValueError.
     """
+
     # 1
     class BadE(enum.Enum):
         BAD = 999
@@ -297,7 +303,7 @@ def test_order_items_must_be_a_list_like() -> None:
     """
     # 1
     with pytest.raises(TypeError):
-        OrderByStrategy.apply(User, "id")
+        OrderByStrategy.apply(User, 'id')
 
 
 def test_text_clause_is_rejected() -> None:
@@ -308,7 +314,7 @@ def test_text_clause_is_rejected() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, [text("id")])
+        OrderByStrategy.apply(User, [text('id')])
 
 
 def test_function_element_is_rejected() -> None:
@@ -338,7 +344,7 @@ def test_pk_fallback_default_when_order_is_none_single_pk() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert "id" in oc
+    assert 'id' in oc
 
 
 def test_pk_fallback_default_when_order_is_none_composite_pk() -> None:
@@ -357,8 +363,8 @@ def test_pk_fallback_default_when_order_is_none_composite_pk() -> None:
     # 3
     sql = compile_sql(select(CompositePK).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\btenant_id\b", oc)
-    assert re.search(r"\bitem_id\b", oc)
+    assert re.search(r'\btenant_id\b', oc)
+    assert re.search(r'\bitem_id\b', oc)
 
 
 def test_is_desc_helper() -> None:
@@ -397,7 +403,7 @@ def test_unary_instrumented_attribute_from_other_model_rejected() -> None:
     """
     # 1
     ue = object.__new__(UnaryExpression)
-    object.__setattr__(ue, "element", Post.id)
+    object.__setattr__(ue, 'element', Post.id)
 
     # 2
     with pytest.raises(ValueError):
@@ -412,7 +418,7 @@ def test_unary_text_clause_is_rejected() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, [asc(text("name"))])
+        OrderByStrategy.apply(User, [asc(text('name'))])
 
 
 def test_unary_function_element_is_rejected() -> None:
@@ -458,7 +464,7 @@ def test_literal_column_is_rejected() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, [literal_column("user.id")])
+        OrderByStrategy.apply(User, [literal_column('user.id')])
 
 
 def test_relationship_attribute_is_rejected() -> None:
@@ -480,11 +486,11 @@ def test_label_is_rejected_both_plain_and_unary() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, [User.id.label("x")])
+        OrderByStrategy.apply(User, [User.id.label('x')])
 
     # 2
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, [User.id.label("x").desc()])
+        OrderByStrategy.apply(User, [User.id.label('x').desc()])
 
 
 def test_binary_expression_is_rejected() -> None:
@@ -506,13 +512,13 @@ def test_none_inside_order_list_is_rejected() -> None:
     """
     # 1
     with pytest.raises(ValueError):
-        OrderByStrategy.apply(User, ["id", None, "name"])
+        OrderByStrategy.apply(User, ['id', None, 'name'])
 
 
 # 1
 # Helper class used to ensure "value attribute but not Enum" is rejected
 class FakeWithValue:
-    value = "id"
+    value = 'id'
 
 
 def test_non_enum_with_value_attr_is_rejected() -> None:
@@ -542,7 +548,7 @@ def test_column_element_same_model_is_allowed() -> None:
     # 3
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bid\b(?!.*DESC)", oc, re.IGNORECASE)
+    assert re.search(r'\bid\b(?!.*DESC)', oc, re.IGNORECASE)
 
 
 def test_column_element_other_model_is_rejected() -> None:
@@ -564,7 +570,7 @@ def test_unary_relationship_attribute_rejected_via_manual_unary_expression() -> 
     """
     # 1
     ue = object.__new__(UnaryExpression)
-    object.__setattr__(ue, "element", User.posts)
+    object.__setattr__(ue, 'element', User.posts)
 
     # 2
     with pytest.raises(ValueError):
@@ -584,7 +590,7 @@ def test_unary_binary_expression_with_no_key_hits_missing_field_branch() -> None
         OrderByStrategy.apply(User, [(User.id + 1).desc()])
 
     # 3
-    assert "does not have a field" in str(exc.value)
+    assert 'does not have a field' in str(exc.value)
 
 
 def test_apply_raises_when_model_has_no_pk_for_default(monkeypatch) -> None:
@@ -595,6 +601,7 @@ def test_apply_raises_when_model_has_no_pk_for_default(monkeypatch) -> None:
     3. Call OrderByStrategy.apply(User, None) to trigger pk fallback.
     4. Assert ValueError message contains "must have a primary key".
     """
+
     # 1
     class FakeMapper:
         column_attrs: list[Any] = []
@@ -604,14 +611,14 @@ def test_apply_raises_when_model_has_no_pk_for_default(monkeypatch) -> None:
     def fake_sa_mapper(_model):
         return FakeMapper()
 
-    monkeypatch.setattr(order_by_mod, "sa_mapper", fake_sa_mapper)
+    monkeypatch.setattr(order_by_mod, 'sa_mapper', fake_sa_mapper)
 
     # 3
     with pytest.raises(ValueError) as exc:
         OrderByStrategy.apply(User, None)
 
     # 4
-    assert "must have a primary key" in str(exc.value)
+    assert 'must have a primary key' in str(exc.value)
 
 
 def test_same_column_compare_exception_then_proxy_set_true() -> None:
@@ -621,6 +628,7 @@ def test_same_column_compare_exception_then_proxy_set_true() -> None:
     2. Ensure A.proxy_set contains b.
     3. Assert _same_column(A(), b) is True.
     """
+
     # 1
     class B:
         pass
@@ -629,7 +637,7 @@ def test_same_column_compare_exception_then_proxy_set_true() -> None:
 
     class A:
         def compare(self, _other):
-            raise RuntimeError("boom")
+            raise RuntimeError('boom')
 
         @property
         def proxy_set(self):
@@ -647,6 +655,7 @@ def test_same_column_recursive_element_path_true() -> None:
     2. Create Outer whose element returns Inner.
     3. Assert _same_column(Outer(), b) is True.
     """
+
     # 1
     class B:
         pass
@@ -721,6 +730,7 @@ def test_same_table_none_tables_are_false() -> None:
     1. Create two objects with table=None.
     2. Assert _same_table returns False.
     """
+
     # 1
     class X:
         table: Any | None = None
@@ -741,10 +751,10 @@ def test_same_column_false_triggers_error_for_both_unary_and_column_element(monk
     4. Call apply() with ColumnElement path and assert ValueError.
     """
     # 1
-    monkeypatch.setattr(OrderByStrategy, "_same_table", lambda _a, _b: True)
+    monkeypatch.setattr(OrderByStrategy, '_same_table', lambda _a, _b: True)
 
     # 2
-    monkeypatch.setattr(OrderByStrategy, "_same_column", lambda _a, _b: False)
+    monkeypatch.setattr(OrderByStrategy, '_same_column', lambda _a, _b: False)
 
     # 3
     with pytest.raises(ValueError):
@@ -765,10 +775,10 @@ def test_unary_instrumented_attribute_success_preserves_direction() -> None:
     """
     # 1
     ue = object.__new__(UnaryExpression)
-    object.__setattr__(ue, "element", User.id)
+    object.__setattr__(ue, 'element', User.id)
 
     # 2
-    object.__setattr__(ue, "modifier", order_by_mod.operators.desc_op)
+    object.__setattr__(ue, 'modifier', order_by_mod.operators.desc_op)
 
     # 3
     cols = OrderByStrategy.apply(User, [ue])
@@ -801,7 +811,7 @@ def test_unary_column_element_success_preserves_direction() -> None:
     # 4
     sql = compile_sql(select(User).order_by(*cols))
     oc = order_clause(sql)
-    assert re.search(r"\bid\b[^,]*\bDESC\b", oc, re.IGNORECASE)
+    assert re.search(r'\bid\b[^,]*\bDESC\b', oc, re.IGNORECASE)
 
 
 def test_unary_expression_with_unknown_inner_hits_final_unsupported_branch() -> None:
@@ -811,14 +821,15 @@ def test_unary_expression_with_unknown_inner_hits_final_unsupported_branch() -> 
     2. Manually construct UnaryExpression with element=WeirdInner().
     3. Assert ValueError matches "Unsupported order_by input type:".
     """
+
     # 1
     class WeirdInner:
         pass
 
     # 2
     ue = object.__new__(UnaryExpression)
-    object.__setattr__(ue, "element", WeirdInner())
+    object.__setattr__(ue, 'element', WeirdInner())
 
     # 3
-    with pytest.raises(ValueError, match=r"Unsupported order_by input type:"):
+    with pytest.raises(ValueError, match=r'Unsupported order_by input type:'):
         OrderByStrategy.apply(User, [ue])

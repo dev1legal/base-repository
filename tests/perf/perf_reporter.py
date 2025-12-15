@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import platform
 import re
 import sys
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
-PERF_RESULTS_DIR = "tests/perf/results"
+PERF_RESULTS_DIR = 'tests/perf/results'
+
 
 @dataclass(frozen=True)
 class PerfMeta:
@@ -24,29 +25,30 @@ class PerfMeta:
     iter: int
     seed_data_rows_cnt: int | None = None
 
+
 def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec='seconds')
 
 
 def _default_run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 
 
 def _results_dir() -> Path:
-    p = os.getenv("PERF_RESULTS_DIR", PERF_RESULTS_DIR)
+    p = os.getenv('PERF_RESULTS_DIR', PERF_RESULTS_DIR)
     return Path(p)
 
 
 def _run_id() -> str:
-    return os.getenv("PERF_RUN_ID") or _default_run_id()
+    return os.getenv('PERF_RUN_ID') or _default_run_id()
 
 
 def _git_sha() -> str | None:
-    return os.getenv("PERF_GIT_SHA")
+    return os.getenv('PERF_GIT_SHA')
 
 
 def _sanitize_filename(name: str) -> str:
-    s = re.sub(r"[^a-zA-Z0-9._-]+", "_", name.strip())
+    s = re.sub(r'[^a-zA-Z0-9._-]+', '_', name.strip())
     return s[:180] if len(s) > 180 else s
 
 
@@ -57,7 +59,7 @@ def _ensure_dir(p: Path) -> None:
 def _jsonl_path(meta: PerfMeta) -> Path:
     base = _results_dir() / meta.suite
     _ensure_dir(base)
-    return base / f"{_sanitize_filename(meta.run_id)}.jsonl"
+    return base / f'{_sanitize_filename(meta.run_id)}.jsonl'
 
 
 def _build_meta(*, suite: str, source: str, iter: int, seed_data_rows_cnt: int | None) -> PerfMeta:
@@ -70,19 +72,19 @@ def _build_meta(*, suite: str, source: str, iter: int, seed_data_rows_cnt: int |
         suite=suite,
         source=source,
         iter=iter,
-        seed_data_rows_cnt=seed_data_rows_cnt
+        seed_data_rows_cnt=seed_data_rows_cnt,
     )
 
 
 def _write_record(meta: PerfMeta, record: dict[str, Any]) -> None:
     payload = {
-        "meta": asdict(meta),
+        'meta': asdict(meta),
         **record,
     }
     path = _jsonl_path(meta)
-    with path.open("a", encoding="utf-8") as f:
+    with path.open('a', encoding='utf-8') as f:
         f.write(json.dumps(payload, ensure_ascii=False))
-        f.write("\n")
+        f.write('\n')
 
 
 def record_table(
@@ -93,7 +95,7 @@ def record_table(
     key_label: str,
     metrics: dict[int, dict[str, float]],
     iter: int,
-    seed_data_rows_cnt: int | None = None
+    seed_data_rows_cnt: int | None = None,
 ) -> None:
     """
     < table 형태 결과를 JSONL로 누적 저장 >
@@ -103,10 +105,10 @@ def record_table(
     """
     meta = _build_meta(suite=suite, source=source, iter=iter, seed_data_rows_cnt=seed_data_rows_cnt)
     record = {
-        "type": "table",
-        "scenario": scenario,
-        "key_label": key_label,
-        "metrics": {str(k): v for k, v in metrics.items()},
+        'type': 'table',
+        'scenario': scenario,
+        'key_label': key_label,
+        'metrics': {str(k): v for k, v in metrics.items()},
     }
     _write_record(meta, record)
 
@@ -118,7 +120,7 @@ def record_one(
     scenario: str,
     metrics: dict[str, float],
     iter: int,
-    seed_data_rows_cnt: int | None = None
+    seed_data_rows_cnt: int | None = None,
 ) -> None:
     """
     < 단일 결과(avg/p95/p99) 형태를 JSONL로 누적 저장 >
@@ -128,8 +130,8 @@ def record_one(
     """
     meta = _build_meta(suite=suite, source=source, iter=iter, seed_data_rows_cnt=seed_data_rows_cnt)
     record = {
-        "type": "one",
-        "scenario": scenario,
-        "metrics": metrics,
+        'type': 'one',
+        'scenario': scenario,
+        'metrics': metrics,
     }
     _write_record(meta, record)

@@ -20,6 +20,7 @@
 - Columns bound to aliased tables (different `table` object)
 - TextClause / FunctionElement based ordering
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -82,7 +83,7 @@ class OrderByStrategy:
             - If the model has no PK for default ordering
         """
         if isinstance(order_items, str):
-            raise TypeError("order_items must be a Sequence, not a single string.")
+            raise TypeError('order_items must be a Sequence, not a single string.')
 
         cols: list[Any] = list(order_items or [])
         cols = OrderByStrategy._normalize_and_validate(model, cols)
@@ -91,7 +92,7 @@ class OrderByStrategy:
         if not cols:
             pks = list(sa_mapper(model).primary_key)
             if not pks:
-                raise ValueError("Cannot build a default ordering. The model must have a primary key.")
+                raise ValueError('Cannot build a default ordering. The model must have a primary key.')
             cols.extend(pks)
 
         # Deduplicate by base column identity (ASC/DESC ignored). First occurrence wins.
@@ -104,7 +105,6 @@ class OrderByStrategy:
             seen.add(base)
             uniq.append(c)
         return uniq
-
 
     @staticmethod
     def _normalize_and_validate(model: type[TModel], cols: list[Any]) -> list[ColumnElement[Any]]:
@@ -164,15 +164,13 @@ class OrderByStrategy:
 
                 # Reject function/text-based ordering.
                 if isinstance(inner, FunctionElement | TextClause):
-                    raise ValueError(f"Unsupported order_by input type: {item!r}")
+                    raise ValueError(f'Unsupported order_by input type: {item!r}')
 
                 # InstrumentedAttribute: must belong to the same model
                 if isinstance(inner, InstrumentedAttribute):
-                    cls = getattr(inner, "class_", None)
+                    cls = getattr(inner, 'class_', None)
                     if cls is not model:
-                        raise ValueError(
-                            f"{inner} belongs to another model ({getattr(cls, '__name__', 'Unknown')})."
-                        )
+                        raise ValueError(f'{inner} belongs to another model ({getattr(cls, "__name__", "Unknown")}).')
                     key_or_name = inner.key
                     if key_or_name not in valid_keys:
                         raise ValueError(f"Model {model.__name__} does not have a field '{key_or_name}'.")
@@ -181,7 +179,7 @@ class OrderByStrategy:
 
                 # ColumnElement: strict same-table + same-column validation
                 if isinstance(inner, ColumnElement):
-                    key_or_name = getattr(inner, "key", getattr(inner, "name", None))
+                    key_or_name = getattr(inner, 'key', getattr(inner, 'name', None))
                     if key_or_name is None or key_or_name not in valid_keys:
                         raise ValueError(f"Model {model.__name__} does not have a field '{key_or_name}'.")
                     expected = valid_expr_map[str(key_or_name)]
@@ -192,15 +190,13 @@ class OrderByStrategy:
                     out.append(item)  # preserve direction
                     continue
 
-                raise ValueError(f"Unsupported order_by input type: {item!r}")
+                raise ValueError(f'Unsupported order_by input type: {item!r}')
 
             # 4) ORM column attribute
             if isinstance(item, InstrumentedAttribute):
-                cls = getattr(item, "class_", None)
+                cls = getattr(item, 'class_', None)
                 if cls is not model:
-                    raise ValueError(
-                        f"'{item}' belongs to another model ({getattr(cls, '__name__', 'Unknown')})."
-                    )
+                    raise ValueError(f"'{item}' belongs to another model ({getattr(cls, '__name__', 'Unknown')}).")
                 key_or_name = item.key
                 if key_or_name not in valid_keys:
                     raise ValueError(f"Model {model.__name__} does not have a field '{key_or_name}'.")
@@ -209,9 +205,9 @@ class OrderByStrategy:
 
             # 5) ColumnElement (labels/aliases/expressions): must pass strict identity checks
             if isinstance(item, ColumnElement):
-                key_or_name = getattr(item, "key", getattr(item, "name", None))
+                key_or_name = getattr(item, 'key', getattr(item, 'name', None))
                 if key_or_name is None or key_or_name not in valid_keys:
-                    raise ValueError(f"Unsupported order_by input type: {item!r}")
+                    raise ValueError(f'Unsupported order_by input type: {item!r}')
                 expected = valid_expr_map[str(key_or_name)]
                 if not OrderByStrategy._same_table(item, expected):
                     raise ValueError(f"Model {model.__name__} does not have a field '{key_or_name}'.")
@@ -222,13 +218,12 @@ class OrderByStrategy:
 
             # 6) Function/Text: explicitly rejected
             if isinstance(item, FunctionElement | TextClause):
-                raise ValueError(f"Unsupported order_by input type: {item!r}")
+                raise ValueError(f'Unsupported order_by input type: {item!r}')
 
             # 7) Unsupported
-            raise ValueError(f"Unsupported order_by input type: {item!r}")
+            raise ValueError(f'Unsupported order_by input type: {item!r}')
 
         return out
-
 
     @staticmethod
     def _same_table(a: Any, b: Any) -> bool:
@@ -236,10 +231,9 @@ class OrderByStrategy:
         Check whether two column expressions belong to the same table object.
         Columns produced by `aliased()` typically carry a different `table` object and will return False.
         """
-        ta = getattr(a, "table", None)
-        tb = getattr(b, "table", None)
+        ta = getattr(a, 'table', None)
+        tb = getattr(b, 'table', None)
         return ta is not None and tb is not None and ta is tb
-
 
     @staticmethod
     def _same_column(a: Any, b: Any) -> bool:
@@ -253,17 +247,17 @@ class OrderByStrategy:
         4) Otherwise => False (simple key/name comparison is intentionally avoided)
         """
         try:
-            cmp = getattr(a, "compare", None)
+            cmp = getattr(a, 'compare', None)
             if callable(cmp) and cmp(b):
                 return True
         except Exception:
             pass
 
-        a_proxy = getattr(a, "proxy_set", None)
+        a_proxy = getattr(a, 'proxy_set', None)
         if a_proxy is not None and b in a_proxy:
             return True
 
-        for attr in ("element", "original"):
+        for attr in ('element', 'original'):
             if hasattr(a, attr):
                 try:
                     if OrderByStrategy._same_column(getattr(a, attr), b):
@@ -273,7 +267,6 @@ class OrderByStrategy:
 
         return False
 
-
     @staticmethod
     def _base_key(col: ColumnElement[Any]) -> str:
         """
@@ -282,9 +275,8 @@ class OrderByStrategy:
         """
         if isinstance(col, UnaryExpression):
             inner = col.element
-            return getattr(inner, "key", getattr(inner, "name", repr(inner)))
-        return getattr(col, "key", getattr(col, "name", repr(col)))
-
+            return getattr(inner, 'key', getattr(inner, 'name', repr(inner)))
+        return getattr(col, 'key', getattr(col, 'name', repr(col)))
 
     @staticmethod
     def is_desc(col: ColumnElement[Any]) -> bool:

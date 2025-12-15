@@ -9,7 +9,7 @@
 ![License](https://img.shields.io/github/license/4jades/base-repository)
 
 
-A repository library that wraps SQLAlchemy and provides built-in CRUD and a query DSL.    
+A repository library that wraps SQLAlchemy and provides built-in CRUD and a query DSL.
 Once you inherit from `BaseRepository`, you can use create/read/update/delete right away.
 
 - No need to re-implement simple CRUD over and over.
@@ -91,7 +91,7 @@ class UserRepo(BaseRepository[UserModel, UserSchema]):
 
 ### 2) Plug in a SessionProvider
 
-Decide how the repository should obtain an `AsyncSession`.    
+Decide how the repository should obtain an `AsyncSession`.
 Recommended: inject a `SessionProvider` once, so the repo can fetch sessions when needed.
 
 ```python

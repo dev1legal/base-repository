@@ -17,7 +17,7 @@ class DummyModel(DeclarativeBase):
 
 
 class M(DummyModel):
-    __tablename__ = "m"
+    __tablename__ = 'm'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column()
@@ -56,30 +56,30 @@ def test_where_criteria_builds_expressions() -> None:
     compiled_id = str(
         expr_id.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "id" in compiled_id
-    assert "1" in compiled_id
+    assert 'id' in compiled_id
+    assert '1' in compiled_id
 
     compiled_user_id = str(
         expr_user_id.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "user_id" in compiled_user_id
-    assert "10" in compiled_user_id
-    assert "20" in compiled_user_id
+    assert 'user_id' in compiled_user_id
+    assert '10' in compiled_user_id
+    assert '20' in compiled_user_id
 
     compiled_active = str(
         expr_active.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "is_active" in compiled_active
-    assert ("1" in compiled_active) or ("true" in compiled_active.lower())
+    assert 'is_active' in compiled_active
+    assert ('1' in compiled_active) or ('true' in compiled_active.lower())
 
 
 def test_none_values_are_skipped() -> None:
@@ -127,7 +127,7 @@ def test_alias_mapping_simple() -> None:
 
     @dataclass
     class FAlias(BaseRepoFilter):
-        __aliases__ = {"account_id": "user_id"}
+        __aliases__ = {'account_id': 'user_id'}
         account_id: int | None = 7
 
     # 1
@@ -147,11 +147,11 @@ def test_alias_mapping_simple() -> None:
     compiled = str(
         expr.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "user_id" in compiled
-    assert "7" in compiled
+    assert 'user_id' in compiled
+    assert '7' in compiled
 
 
 def test_sequence_value_generates_in_expression_with_alias() -> None:
@@ -165,7 +165,7 @@ def test_sequence_value_generates_in_expression_with_alias() -> None:
 
     @dataclass
     class FSeq(BaseRepoFilter):
-        __aliases__ = {"user_ids": "user_id"}
+        __aliases__ = {'user_ids': 'user_id'}
         user_ids: IterableABC[int] | None = None
 
     # 1
@@ -187,12 +187,12 @@ def test_sequence_value_generates_in_expression_with_alias() -> None:
     compiled = str(
         expr.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "user_id" in compiled
-    assert "10" in compiled
-    assert "20" in compiled
+    assert 'user_id' in compiled
+    assert '10' in compiled
+    assert '20' in compiled
 
 
 def test_strict_mode_raises_on_unknown_column() -> None:
@@ -238,11 +238,11 @@ def test_non_dataclass_raises_type_error() -> None:
 
 
 @pytest.mark.parametrize(
-    "filter_cls, value",
+    'filter_cls, value',
     [
-        ("str", "10"),
-        ("bytes", b"10"),
-        ("bytearray", bytearray(b"10")),
+        ('str', '10'),
+        ('bytes', b'10'),
+        ('bytearray', bytearray(b'10')),
     ],
 )
 def test_string_like_values_are_not_treated_as_sequences_and_do_not_use_in(filter_cls: str, value) -> None:
@@ -269,8 +269,8 @@ def test_string_like_values_are_not_treated_as_sequences_and_do_not_use_in(filte
     compiled = str(
         expr.compile(
             dialect=sqlite.dialect(),
-            compile_kwargs={"literal_binds": True},
+            compile_kwargs={'literal_binds': True},
         )
     )
-    assert "user_id" in compiled
-    assert "IN" not in compiled.upper()
+    assert 'user_id' in compiled
+    assert 'IN' not in compiled.upper()

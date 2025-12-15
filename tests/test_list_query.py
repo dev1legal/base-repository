@@ -121,11 +121,7 @@ def test_limit_and_paging_validations() -> None:
     from base_repository.query.converter import _build_list_query
 
     with pytest.raises(ValueError):
-        _build_list_query(
-            ListQuery(Result)
-            .order_by([Result.id.asc()])
-            .paging(page=0, size=10)
-        )
+        _build_list_query(ListQuery(Result).order_by([Result.id.asc()]).paging(page=0, size=10))
 
     # 3
     with pytest.raises(ValueError):
@@ -153,24 +149,19 @@ def test_build_calls_keysetstrategy_apply(monkeypatch) -> None:
     called: dict[str, Any] = {}
 
     def fake_keyset_apply(stmt, *, order_cols, cursor, size):
-        called["ok"] = True
+        called['ok'] = True
         return stmt
 
-    monkeypatch.setattr(lq_mod.KeysetStrategy, "apply", staticmethod(fake_keyset_apply))
+    monkeypatch.setattr(lq_mod.KeysetStrategy, 'apply', staticmethod(fake_keyset_apply))
 
     # 2
     from base_repository.query.list_query import _build_list_query
 
-    q = (
-        ListQuery(Result)
-        .order_by([Result.id.asc()])
-        .with_cursor({})
-        .limit(5)
-    )
+    q = ListQuery(Result).order_by([Result.id.asc()]).with_cursor({}).limit(5)
 
     # 3
     _ = _build_list_query(q)
-    assert called.get("ok") is True
+    assert called.get('ok') is True
 
 
 def test_build_calls_offsetstrategy_apply(monkeypatch) -> None:
@@ -184,11 +175,11 @@ def test_build_calls_offsetstrategy_apply(monkeypatch) -> None:
     called: dict[str, Any] = {}
 
     def fake_offset_apply(stmt, *, page, size):
-        called["page"] = page
-        called["size"] = size
+        called['page'] = page
+        called['size'] = size
         return stmt
 
-    monkeypatch.setattr(lq_mod.OffsetStrategy, "apply", staticmethod(fake_offset_apply))
+    monkeypatch.setattr(lq_mod.OffsetStrategy, 'apply', staticmethod(fake_offset_apply))
 
     # 2
     from base_repository.query.list_query import _build_list_query
@@ -197,7 +188,7 @@ def test_build_calls_offsetstrategy_apply(monkeypatch) -> None:
 
     # 3
     _ = _build_list_query(q)
-    assert called.get("page") == 3 and called.get("size") == 10
+    assert called.get('page') == 3 and called.get('size') == 10
 
 
 def test_sealed_blocks_all_mutations_after_build() -> None:
@@ -238,12 +229,7 @@ def test_valid_offset_flow_executes_and_seals() -> None:
     # 1
     from base_repository.query.list_query import _build_list_query
 
-    q = (
-        ListQuery(Result)
-        .where(RFilter(tenant_id=1))
-        .order_by([Result.id.asc()])
-        .paging(page=1, size=2)
-    )
+    q = ListQuery(Result).where(RFilter(tenant_id=1)).order_by([Result.id.asc()]).paging(page=1, size=2)
 
     # 2
     stmt = _build_list_query(q)
@@ -315,8 +301,9 @@ def test_apply_paging_cursor_mode_missing_cursor() -> None:
     3. Assert _apply_paging raises ValueError with the expected message.
     """
     # 1
-    from base_repository.query.list_query import _apply_paging, _compute_order_cols
     from sqlalchemy import select
+
+    from base_repository.query.list_query import _apply_paging, _compute_order_cols
 
     q = ListQuery(Result)
     q._mode = PagingMode.CURSOR
@@ -328,7 +315,7 @@ def test_apply_paging_cursor_mode_missing_cursor() -> None:
     order_cols = _compute_order_cols(ListQuery(Result).order_by([Result.id.asc()]))
 
     # 3
-    with pytest.raises(ValueError, match="Cursor mode requires with_cursor"):
+    with pytest.raises(ValueError, match='Cursor mode requires with_cursor'):
         _apply_paging(stmt, q, order_cols)
 
 
@@ -340,8 +327,9 @@ def test_apply_paging_offset_mode_missing_page_or_size() -> None:
     3. Assert _apply_paging raises ValueError with the expected message.
     """
     # 1
-    from base_repository.query.list_query import _apply_paging, _compute_order_cols
     from sqlalchemy import select
+
+    from base_repository.query.list_query import _apply_paging, _compute_order_cols
 
     q = ListQuery(Result)
     q._mode = PagingMode.OFFSET
@@ -353,5 +341,5 @@ def test_apply_paging_offset_mode_missing_page_or_size() -> None:
     order_cols = _compute_order_cols(ListQuery(Result).order_by([Result.id.asc()]))
 
     # 3
-    with pytest.raises(ValueError, match="Offset mode requires paging"):
+    with pytest.raises(ValueError, match='Offset mode requires paging'):
         _apply_paging(stmt, q, order_cols)

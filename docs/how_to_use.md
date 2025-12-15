@@ -1,6 +1,6 @@
 <div align="right">
   <a href="https://4jades.github.io/base-repository/how_to_use.html">English</a> | <a href="https://4jades.github.io/base-repository/how_to_use.ko.html">한국어</a>
-</div>       
+</div>
 
 # How To Use (User Guide)
 
@@ -554,4 +554,3 @@ Configuration
 
 * You can change `SEED_DATA_ROWS` in `tests/perf/seed.config.py`.
 * If you change table fields or data rules, you must also update the tests (currently not designed to be flexible).
-

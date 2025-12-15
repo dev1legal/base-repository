@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import wraps
-from typing import Any, Awaitable, Callable, Mapping, Protocol, cast
-
-from collections.abc import Sequence
 import statistics
 import time
+from collections.abc import Awaitable, Callable, Mapping, Sequence
+from dataclasses import dataclass
+from functools import wraps
+from typing import Any, Protocol, cast
 
-from pydantic import BaseModel, ConfigDict
 import pytest
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
     Integer,
     String,
@@ -23,17 +22,17 @@ from sqlalchemy import func as sa_func
 from sqlalchemy import update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-from sqlmodel import SQLModel, Field, select as sqlm_select
+from sqlmodel import Field, SQLModel
+from sqlmodel import select as sqlm_select
 
 from base_repository.base_filter import BaseRepoFilter
 from base_repository.repository.base_repo import BaseRepository
 from tests.perf.perf_reporter import record_one, record_table
 from tests.perf.seed.config import PERF_RESULT_COLUMNS, SEED_DATA_ROWS
+
 from .db_config import get_perf_engine, perf_session_provider
 
-
-pytestmark = pytest.mark.asyncio(loop_scope="session")
+pytestmark = pytest.mark.asyncio(loop_scope='session')
 
 
 INSERT_ROW_VALUES = [100, 500, 1_000, 5_000]
@@ -58,7 +57,8 @@ class PerfResult(PerfBase):
     id, category, status, tag, group_no, payload, value, value2, flag, extra
     seed data와 동일해야함.
     """
-    __tablename__ = "perf_result"
+
+    __tablename__ = 'perf_result'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     category: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -76,7 +76,7 @@ class PerfResult(PerfBase):
 
 # SQLModel 버전 (동일 테이블 이름)
 class PerfResultSQLModel(SQLModel, table=True):
-    __tablename__ = "perf_result"
+    __tablename__ = 'perf_result'
 
     id: int | None = Field(default=None, primary_key=True)
 
@@ -92,12 +92,13 @@ class PerfResultSQLModel(SQLModel, table=True):
     flag: int
     extra: str
 
+
 class HasTable(Protocol):
     __table__: Table
 
+
 def _table_of(model: type[Any]) -> Table:
     return cast(HasTable, cast(Any, model)).__table__
-
 
 
 class CommonModel(BaseModel):
@@ -128,6 +129,7 @@ class PerfResultFilter(BaseRepoFilter):
     - Sequence → in_(seq)
     - 기타 → ==
     """
+
     id: int | Sequence[int] | None = None
     category: str | Sequence[str] | None = None
     status: str | Sequence[str] | None = None
@@ -147,6 +149,7 @@ class PerfResultRangeFilter(BaseRepoFilter):
     """
     UPDATE 벤치마크용 범위 필터.
     """
+
     min_id: int | None = None
     max_id: int | None = None
 
@@ -200,9 +203,9 @@ async def run_benchmark_create_or_update(
         p99 = samples_sorted[int(len(samples_sorted) * 0.99)]
 
         results[row] = {
-            "avg": statistics.mean(samples_ms),
-            "p95": p95,
-            "p99": p99,
+            'avg': statistics.mean(samples_ms),
+            'p95': p95,
+            'p99': p99,
         }
 
     return results
@@ -232,9 +235,9 @@ async def run_benchmark_pages(
         p99 = samples_sorted[int(len(samples_sorted) * 0.99)]
 
         results[page] = {
-            "avg": statistics.mean(samples_ms),
-            "p95": p95,
-            "p99": p99,
+            'avg': statistics.mean(samples_ms),
+            'p95': p95,
+            'p99': p99,
         }
 
     return results
@@ -259,9 +262,9 @@ async def run_benchmark_noarg(
     p99 = samples_sorted[int(len(samples_sorted) * 0.99)]
 
     return {
-        "avg": statistics.mean(samples_ms),
-        "p95": p95,
-        "p99": p99,
+        'avg': statistics.mean(samples_ms),
+        'p95': p95,
+        'p99': p99,
     }
 
 
@@ -270,26 +273,21 @@ def print_table(
     rows: Mapping[int, Mapping[str, float]],
     iter: int,
     *,
-    key_label: str = "ROW",
+    key_label: str = 'ROW',
 ) -> None:
     print()
-    print(f"=== {title} ===")
-    print(f"{key_label:>8} | {'AVG(ms)':>10} | {'P95(ms)':>10} | {'P99(ms)':>10}")
-    print("-" * 50)
+    print(f'=== {title} ===')
+    print(f'{key_label:>8} | {"AVG(ms)":>10} | {"P95(ms)":>10} | {"P99(ms)":>10}')
+    print('-' * 50)
 
     for key, metrics in rows.items():
-        print(
-            f"{key:>8} | "
-            f"{metrics['avg']:>10.4f} | "
-            f"{metrics['p95']:>10.4f} | "
-            f"{metrics['p99']:>10.4f}"
-        )
+        print(f'{key:>8} | {metrics["avg"]:>10.4f} | {metrics["p95"]:>10.4f} | {metrics["p99"]:>10.4f}')
 
     print()
     metrics_items: dict[int, dict[str, float]] = {k: dict(v) for k, v in rows.items()}
     record_table(
-        suite="db",
-        source="tests/perf/perf_db_crud.py",
+        suite='db',
+        source='tests/perf/perf_db_crud.py',
         scenario=title,
         key_label=key_label,
         metrics=metrics_items,
@@ -300,15 +298,15 @@ def print_table(
 
 def print_one(title: str, metrics: dict[str, float], iter: int) -> None:
     print()
-    print(f"=== {title} ===")
-    print(f"AVG(ms): {metrics['avg']:.4f}, P95(ms): {metrics['p95']:.4f}, P99(ms): {metrics['p99']:.4f}")
+    print(f'=== {title} ===')
+    print(f'AVG(ms): {metrics["avg"]:.4f}, P95(ms): {metrics["p95"]:.4f}, P99(ms): {metrics["p99"]:.4f}')
     record_one(
-        suite="db",
-        source="tests/perf/perf_db_crud.py",
+        suite='db',
+        source='tests/perf/perf_db_crud.py',
         scenario=title,
         metrics=metrics,
         iter=iter,
-        seed_data_rows_cnt=SEED_DATA_ROWS
+        seed_data_rows_cnt=SEED_DATA_ROWS,
     )
 
 
@@ -316,6 +314,7 @@ def cleanup_inserted_rows(model):
     """
     CREATE 벤치마크 후에 새로 들어간 row들만 정리.
     """
+
     def decorator(fn):
         @wraps(fn)
         async def wrapper(n: int):
@@ -340,8 +339,8 @@ def cleanup_inserted_rows(model):
             return duration
 
         return wrapper
-    return decorator
 
+    return decorator
 
 
 def with_read_session():
@@ -351,10 +350,11 @@ def with_read_session():
     - 함수는 session을 받아 작업 수행
     - cleanup 없음
     """
+
     def decorator(fn):
         @wraps(fn)
         async def wrapper(*args, **kwargs):
-            session: AsyncSession = perf_session_provider.get_session() # type: ignore[annotation-unchecked]
+            session: AsyncSession = perf_session_provider.get_session()  # type: ignore[annotation-unchecked]
 
             try:
                 duration = await fn(*args, session=session, **kwargs)
@@ -364,6 +364,7 @@ def with_read_session():
             return duration
 
         return wrapper
+
     return decorator
 
 
@@ -375,6 +376,7 @@ def delete_and_restore_row(model):
     3. 삭제 후 보관한 dict로 row를 다시 INSERT 합니다.
     4. 커밋하고 세션을 닫습니다.
     """
+
     def decorator(fn):
         @wraps(fn)
         async def wrapper(target_id: int):
@@ -382,7 +384,7 @@ def delete_and_restore_row(model):
             try:
                 # 1) 삭제 대상 row 스냅샷 (id 제외)
                 row = (await session.execute(select(model).where(model.id == target_id))).scalar_one()
-                payload = {c.key: getattr(row, c.key) for c in model.__table__.columns if c.key != "id"}
+                payload = {c.key: getattr(row, c.key) for c in model.__table__.columns if c.key != 'id'}
 
                 # 2) delete timing
                 duration = await fn(target_id, session=session)
@@ -395,6 +397,7 @@ def delete_and_restore_row(model):
                 await session.close()
 
         return wrapper
+
     return decorator
 
 
@@ -413,17 +416,17 @@ def validate_perf_schema_consistency():
     config_cols = {name for name, _ in PERF_RESULT_COLUMNS}
 
     # SQLAlchemy 모델 기준 컬럼명 (id 제외)
-    sa_cols = {c.key for c in PerfResult.__table__.columns if c.key != "id"}
+    sa_cols = {c.key for c in PerfResult.__table__.columns if c.key != 'id'}
 
     # SQLModel 기준
-    sqlm_cols = {field for field in PerfResultSQLModel.model_fields if field != "id"}
+    sqlm_cols = {field for field in PerfResultSQLModel.model_fields if field != 'id'}
 
     # Pydantic Schema 기준
-    schema_cols = {f for f in PerfResultSchema.model_fields if f != "id"}
+    schema_cols = {f for f in PerfResultSchema.model_fields if f != 'id'}
 
-    assert config_cols == sa_cols, f"Config vs SQLAlchemy mismatch:\nconfig={config_cols}\nmodel={sa_cols}"
-    assert config_cols == sqlm_cols, f"Config vs SQLModel mismatch:\nconfig={config_cols}\nmodel={sqlm_cols}"
-    assert config_cols == schema_cols, f"Config vs Schema mismatch:\nconfig={config_cols}\nmodel={schema_cols}"
+    assert config_cols == sa_cols, f'Config vs SQLAlchemy mismatch:\nconfig={config_cols}\nmodel={sa_cols}'
+    assert config_cols == sqlm_cols, f'Config vs SQLModel mismatch:\nconfig={config_cols}\nmodel={sqlm_cols}'
+    assert config_cols == schema_cols, f'Config vs Schema mismatch:\nconfig={config_cols}\nmodel={schema_cols}'
 
 
 # ===================================================================
@@ -484,10 +487,7 @@ async def CREATE_MANY__repo_create_many(n: int, session: AsyncSession) -> float:
 
     t0 = time.perf_counter()
 
-    schemas = [
-        PerfResultSchema(id=None, **cast(dict[str, Any], make_row_values(i)))
-        for i in range(n)
-    ]
+    schemas = [PerfResultSchema(id=None, **cast(dict[str, Any], make_row_values(i))) for i in range(n)]
     await repo.create_many(
         items=schemas,
         session=session,
@@ -503,10 +503,7 @@ async def CREATE_MANY__repo_create_many(n: int, session: AsyncSession) -> float:
 async def CREATE_MANY__sqlmodel(n: int, session: AsyncSession) -> float:
     t0 = time.perf_counter()
 
-    objs = [
-        PerfResultSQLModel(id=None, **make_row_values(i))
-        for i in range(n)
-    ]
+    objs = [PerfResultSQLModel(id=None, **make_row_values(i)) for i in range(n)]
     session.add_all(objs)
     await session.commit()
 
@@ -558,7 +555,6 @@ async def CREATE__sqlmodel(n: int, session: AsyncSession) -> float:
     return t1 - t0
 
 
-
 # ===================================================================
 # UPDATE MANY (같은 범위를 SA / BaseRepo / SQLModel로 갱신)
 # ===================================================================
@@ -570,11 +566,7 @@ async def UPDATE_MANY__sa_plain(n: int, session: AsyncSession) -> float:
     """
     t0 = time.perf_counter()
 
-    stmt = (
-        sa_update(PerfResult)
-        .where(PerfResult.id <= n)
-        .values(value2=999)
-    )
+    stmt = sa_update(PerfResult).where(PerfResult.id <= n).values(value2=999)
     await session.execute(stmt)
     await session.commit()
 
@@ -594,7 +586,7 @@ async def UPDATE_MANY__repo_update(n: int, session: AsyncSession) -> float:
 
     _rowcount = await repo.update(
         flt=flt,
-        update={"value2": 999},
+        update={'value2': 999},
         session=session,
     )
     await session.commit()
@@ -614,10 +606,7 @@ async def UPDATE_MANY__sqlmodel_dirty(n: int, session: AsyncSession) -> float:
     c = tbl.c
     t0 = time.perf_counter()
 
-    stmt = (
-        sqlm_select(PerfResultSQLModel)
-        .where(c.id <= n)
-    )
+    stmt = sqlm_select(PerfResultSQLModel).where(c.id <= n)
     result = await session.execute(stmt)
     rows = result.scalars().all()
 
@@ -637,12 +626,7 @@ async def UPDATE_MANY__sqlmodel_dirty(n: int, session: AsyncSession) -> float:
 async def READ_PAGE__sa_offset(page: int, session: AsyncSession) -> float:
     offset = (page - 1) * PAGE_SIZE_FOR_PAGE_BENCH
 
-    stmt = (
-        select(PerfResult)
-        .order_by(PerfResult.id.asc())
-        .offset(offset)
-        .limit(PAGE_SIZE_FOR_PAGE_BENCH)
-    )
+    stmt = select(PerfResult).order_by(PerfResult.id.asc()).offset(offset).limit(PAGE_SIZE_FOR_PAGE_BENCH)
 
     t0 = time.perf_counter()
     rows = (await session.execute(stmt)).scalars().all()
@@ -678,10 +662,7 @@ async def READ_PAGE__sa_keyset(page: int, session: AsyncSession) -> float:
     start_id = (page - 1) * PAGE_SIZE_FOR_PAGE_BENCH
 
     stmt = (
-        select(PerfResult)
-        .where(PerfResult.id > start_id)
-        .order_by(PerfResult.id.asc())
-        .limit(PAGE_SIZE_FOR_PAGE_BENCH)
+        select(PerfResult).where(PerfResult.id > start_id).order_by(PerfResult.id.asc()).limit(PAGE_SIZE_FOR_PAGE_BENCH)
     )
 
     t0 = time.perf_counter()
@@ -701,7 +682,7 @@ async def READ_PAGE__repo_keyset(page: int, session: AsyncSession) -> float:
     repo = PerfResultRepo()
 
     start_id = (page - 1) * PAGE_SIZE_FOR_PAGE_BENCH
-    cursor = {} if start_id == 0 else {"id": start_id}
+    cursor = {} if start_id == 0 else {'id': start_id}
 
     t0 = time.perf_counter()
     rows = await repo.get_list(
@@ -727,12 +708,7 @@ async def READ_PAGE__sqlmodel_offset(page: int, session: AsyncSession) -> float:
 
     offset = (page - 1) * PAGE_SIZE_FOR_PAGE_BENCH
 
-    stmt = (
-        sqlm_select(PerfResultSQLModel)
-        .order_by(c.id.asc())
-        .offset(offset)
-        .limit(PAGE_SIZE_FOR_PAGE_BENCH)
-    )
+    stmt = sqlm_select(PerfResultSQLModel).order_by(c.id.asc()).offset(offset).limit(PAGE_SIZE_FOR_PAGE_BENCH)
 
     t0 = time.perf_counter()
     rows = (await session.execute(stmt)).scalars().all()
@@ -754,9 +730,9 @@ async def COMPLEX_WHERE8__sa(session: AsyncSession) -> float:
         select(PerfResult)
         .where(
             PerfResult.id.in_([1, 2, 3, 4]),
-            PerfResult.category.in_(["cat-1", "cat-2"]),
-            PerfResult.status.in_(["status-1", "status-2"]),
-            PerfResult.tag.in_(["tag-0", "tag-1"]),
+            PerfResult.category.in_(['cat-1', 'cat-2']),
+            PerfResult.status.in_(['status-1', 'status-2']),
+            PerfResult.tag.in_(['tag-0', 'tag-1']),
             PerfResult.group_no.in_([10, 11, 12]),
             PerfResult.value == 100,
             PerfResult.value2 == 1_000_000,
@@ -780,11 +756,11 @@ async def COMPLEX_WHERE8__repo(session: AsyncSession) -> float:
 
     flt = PerfResultFilter(
         id=[1, 2, 3, 4],
-        category=["cat-1", "cat-2"],
-        status=["status-1", "status-2"],
-        tag=["tag-0", "tag-1"],
+        category=['cat-1', 'cat-2'],
+        status=['status-1', 'status-2'],
+        tag=['tag-0', 'tag-1'],
         group_no=[10, 11, 12],
-        value=100,           
+        value=100,
         value2=1_000_000,
         flag=[0, 1],
     )
@@ -811,9 +787,9 @@ async def COMPLEX_WHERE8__sqlmodel(session: AsyncSession) -> float:
         sqlm_select(PerfResultSQLModel)
         .where(
             c.id.in_([1, 2, 3, 4]),
-            c.category.in_(["cat-1", "cat-2"]),
-            c.status.in_(["status-1", "status-2"]),
-            c.tag.in_(["tag-0", "tag-1"]),
+            c.category.in_(['cat-1', 'cat-2']),
+            c.status.in_(['status-1', 'status-2']),
+            c.tag.in_(['tag-0', 'tag-1']),
             c.group_no.in_([10, 11, 12]),
             c.value == 100,
             c.value2 == 1_000_000,
@@ -836,8 +812,8 @@ async def COMPLEX_WHERE3_ORDER3__sa(session: AsyncSession) -> float:
     stmt = (
         select(PerfResult)
         .where(
-            PerfResult.category == "cat-1",
-            PerfResult.status == "status-1",
+            PerfResult.category == 'cat-1',
+            PerfResult.status == 'status-1',
             PerfResult.flag == 1,
         )
         .order_by(
@@ -861,8 +837,8 @@ async def COMPLEX_WHERE3_ORDER3__repo(session: AsyncSession) -> float:
     repo = PerfResultRepo()
 
     flt = PerfResultFilter(
-        category="cat-1",
-        status="status-1",
+        category='cat-1',
+        status='status-1',
         flag=1,
     )
 
@@ -891,8 +867,8 @@ async def COMPLEX_WHERE3_ORDER3__sqlmodel(session: AsyncSession) -> float:
     stmt = (
         sqlm_select(PerfResultSQLModel)
         .where(
-            c.category == "cat-1",
-            c.status == "status-1",
+            c.category == 'cat-1',
+            c.status == 'status-1',
             c.flag == 1,
         )
         .order_by(
@@ -1029,8 +1005,8 @@ async def COUNT_WHERE3__sa(session: AsyncSession) -> float:
         select(func.count())
         .select_from(PerfResult)
         .where(
-            PerfResult.category == "cat-1",
-            PerfResult.status == "status-1",
+            PerfResult.category == 'cat-1',
+            PerfResult.status == 'status-1',
             PerfResult.flag == 1,
         )
     )
@@ -1045,7 +1021,7 @@ async def COUNT_WHERE3__sa(session: AsyncSession) -> float:
 @with_read_session()
 async def COUNT_WHERE3__repo(session: AsyncSession) -> float:
     repo = PerfResultRepo()
-    flt = PerfResultFilter(category="cat-1", status="status-1", flag=1)
+    flt = PerfResultFilter(category='cat-1', status='status-1', flag=1)
 
     t0 = time.perf_counter()
     cnt = await repo.count(flt=flt, session=session)
@@ -1060,9 +1036,9 @@ async def COUNT_WHERE3__sqlmodel(session: AsyncSession) -> float:
         select(func.count())
         .select_from(PerfResultSQLModel)
         .where(
-            column("category") == "cat-1",
-            column("status") == "status-1",
-            column("flag") == 1,
+            column('category') == 'cat-1',
+            column('status') == 'status-1',
+            column('flag') == 1,
         )
     )
 
@@ -1080,7 +1056,7 @@ async def COUNT_WHERE3__sqlmodel(session: AsyncSession) -> float:
 async def DELETE__sa_plain(target_id: int, *, session: AsyncSession) -> float:
     t0 = time.perf_counter()
     res = await session.execute(delete(PerfResult).where(PerfResult.id == target_id))
-    _ = res.rowcount or 0 # type: ignore[attr-defined]
+    _ = res.rowcount or 0  # type: ignore[attr-defined]
     await session.commit()
     t1 = time.perf_counter()
     return t1 - t0
@@ -1120,21 +1096,21 @@ async def test_perf_db_create_many() -> None:
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk create from schemas] sqlalchemy", create_sa, ITERATIONS)
+    print_table('[TEST bulk create from schemas] sqlalchemy', create_sa, ITERATIONS)
 
     create_repo = await run_benchmark_create_or_update(
         CREATE_MANY__repo_create_many,
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk create from schemas] baserepo", create_repo, ITERATIONS)
+    print_table('[TEST bulk create from schemas] baserepo', create_repo, ITERATIONS)
 
     create_sqlm = await run_benchmark_create_or_update(
         CREATE_MANY__sqlmodel,
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk create from schemas] sqlmodel", create_sqlm, ITERATIONS)
+    print_table('[TEST bulk create from schemas] sqlmodel', create_sqlm, ITERATIONS)
 
 
 @pytest.mark.asyncio
@@ -1145,21 +1121,21 @@ async def test_perf_db_create() -> None:
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST create from schemas] sqlalchemy", create_sa, ITERATIONS)
+    print_table('[TEST create from schemas] sqlalchemy', create_sa, ITERATIONS)
 
     create_repo = await run_benchmark_create_or_update(
         CREATE__repo_create,
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST create from schemas] baserepo", create_repo, ITERATIONS)
+    print_table('[TEST create from schemas] baserepo', create_repo, ITERATIONS)
 
     create_sqlm = await run_benchmark_create_or_update(
         CREATE__sqlmodel,
         INSERT_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST create from schemas] sqlmodel", create_sqlm, ITERATIONS)
+    print_table('[TEST create from schemas] sqlmodel', create_sqlm, ITERATIONS)
 
 
 @pytest.mark.asyncio
@@ -1171,7 +1147,12 @@ async def test_perf_db_page_scaling_offset_vs_keyset() -> None:
         OFFSET_PAGES,
         iterations=ITERATIONS,
     )
-    print_table(f"[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] sqlalchemy offset", sa_offset, iter=ITERATIONS, key_label="PAGE")
+    print_table(
+        f'[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] sqlalchemy offset',
+        sa_offset,
+        iter=ITERATIONS,
+        key_label='PAGE',
+    )
 
     # Repo offset
     repo_offset = await run_benchmark_pages(
@@ -1179,7 +1160,12 @@ async def test_perf_db_page_scaling_offset_vs_keyset() -> None:
         OFFSET_PAGES,
         iterations=ITERATIONS,
     )
-    print_table(f"[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] baserepo offset", repo_offset, iter=ITERATIONS, key_label="PAGE")
+    print_table(
+        f'[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] baserepo offset',
+        repo_offset,
+        iter=ITERATIONS,
+        key_label='PAGE',
+    )
 
     # SQLModel offset
     sqlm_offset = await run_benchmark_pages(
@@ -1187,7 +1173,12 @@ async def test_perf_db_page_scaling_offset_vs_keyset() -> None:
         OFFSET_PAGES,
         iterations=ITERATIONS,
     )
-    print_table(f"[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] sqlmodel offset", sqlm_offset, iter=ITERATIONS, key_label="PAGE")
+    print_table(
+        f'[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- offset] sqlmodel offset',
+        sqlm_offset,
+        iter=ITERATIONS,
+        key_label='PAGE',
+    )
 
     # SA keyset
     sa_keyset = await run_benchmark_pages(
@@ -1195,7 +1186,12 @@ async def test_perf_db_page_scaling_offset_vs_keyset() -> None:
         OFFSET_PAGES,
         iterations=ITERATIONS,
     )
-    print_table(f"[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- keyset] sqlalchemy keyset(id)", sa_keyset, iter=ITERATIONS, key_label="PAGE")
+    print_table(
+        f'[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- keyset] sqlalchemy keyset(id)',
+        sa_keyset,
+        iter=ITERATIONS,
+        key_label='PAGE',
+    )
 
     # Repo keyset
     repo_keyset = await run_benchmark_pages(
@@ -1203,7 +1199,12 @@ async def test_perf_db_page_scaling_offset_vs_keyset() -> None:
         OFFSET_PAGES,
         iterations=ITERATIONS,
     )
-    print_table(f"[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- keyset] baserepo keyset(id)", repo_keyset, iter=ITERATIONS, key_label="PAGE")
+    print_table(
+        f'[TEST paging (page size:{PAGE_SIZE_FOR_PAGE_BENCH}) with ORDER BY ID- keyset] baserepo keyset(id)',
+        repo_keyset,
+        iter=ITERATIONS,
+        key_label='PAGE',
+    )
 
 
 @pytest.mark.asyncio
@@ -1215,21 +1216,21 @@ async def test_perf_db_update_many() -> None:
         UPDATE_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk update from dict] sqlalchemy", update_sa, iter=ITERATIONS)
+    print_table('[TEST bulk update from dict] sqlalchemy', update_sa, iter=ITERATIONS)
 
     update_repo = await run_benchmark_create_or_update(
         UPDATE_MANY__repo_update,
         UPDATE_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk update from dict] baserepo", update_repo, iter=ITERATIONS)
+    print_table('[TEST bulk update from dict] baserepo', update_repo, iter=ITERATIONS)
 
     update_sqlm = await run_benchmark_create_or_update(
         UPDATE_MANY__sqlmodel_dirty,
         UPDATE_ROW_VALUES,
         iterations=ITERATIONS,
     )
-    print_table("[TEST bulk update from dict] sqlmodel-dirty-check", update_sqlm, iter=ITERATIONS)
+    print_table('[TEST bulk update from dict] sqlmodel-dirty-check', update_sqlm, iter=ITERATIONS)
 
 
 @pytest.mark.asyncio
@@ -1244,33 +1245,33 @@ async def test_perf_db_complex_where_and_multi_order() -> None:
     repo_where8 = await run_benchmark_noarg(COMPLEX_WHERE8__repo, iterations=ITERATIONS)
     sqlm_where8 = await run_benchmark_noarg(COMPLEX_WHERE8__sqlmodel, iterations=ITERATIONS)
 
-    print_one("[TEST fetch with 8 WHERE Conditions] - sqlalchemy", sa_where8, iter=ITERATIONS)
-    print_one("[TEST fetch with 8 WHERE Conditions] - baserepo", repo_where8, iter=ITERATIONS)
-    print_one("[TEST fetch with 8 WHERE Conditions] - sqlmodel", sqlm_where8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 WHERE Conditions] - sqlalchemy', sa_where8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 WHERE Conditions] - baserepo', repo_where8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 WHERE Conditions] - sqlmodel', sqlm_where8, iter=ITERATIONS)
 
     # WHERE 3개 + ORDER 3개
     sa_w3_o3 = await run_benchmark_noarg(COMPLEX_WHERE3_ORDER3__sa, iterations=ITERATIONS)
     repo_w3_o3 = await run_benchmark_noarg(COMPLEX_WHERE3_ORDER3__repo, iterations=ITERATIONS)
     sqlm_w3_o3 = await run_benchmark_noarg(COMPLEX_WHERE3_ORDER3__sqlmodel, iterations=ITERATIONS)
 
-    print_one("[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - sqlalchemy", sa_w3_o3, iter=ITERATIONS)
-    print_one("[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - baserepo", repo_w3_o3, iter=ITERATIONS)
-    print_one("[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - sqlmodel", sqlm_w3_o3, iter=ITERATIONS)
+    print_one('[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - sqlalchemy', sa_w3_o3, iter=ITERATIONS)
+    print_one('[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - baserepo', repo_w3_o3, iter=ITERATIONS)
+    print_one('[TEST fetch with 3 WHERE and 3 ORDER BY Conditions] - sqlmodel', sqlm_w3_o3, iter=ITERATIONS)
 
     # ORDER 8개
     sa_o8 = await run_benchmark_noarg(COMPLEX_ORDER8__sa, iterations=ITERATIONS)
     repo_o8 = await run_benchmark_noarg(COMPLEX_ORDER8__repo, iterations=ITERATIONS)
     sqlm_o8 = await run_benchmark_noarg(COMPLEX_ORDER8__sqlmodel, iterations=ITERATIONS)
 
-    print_one("[TEST fetch with 8 ORDER By Conditions] - sqlalchemy", sa_o8, iter=ITERATIONS)
-    print_one("[TEST fetch with 8 ORDER By Conditions] - baserepo", repo_o8, iter=ITERATIONS)
-    print_one("[TEST fetch with 8 ORDER By Conditions] - sqlmodel", sqlm_o8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 ORDER By Conditions] - sqlalchemy', sa_o8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 ORDER By Conditions] - baserepo', repo_o8, iter=ITERATIONS)
+    print_one('[TEST fetch with 8 ORDER By Conditions] - sqlmodel', sqlm_o8, iter=ITERATIONS)
 
 
 @pytest.mark.asyncio
 @pytest.mark.perf_db
 async def test_perf_db_get() -> None:
-    """ 단건 get 비교 테스트"""
+    """단건 get 비교 테스트"""
     session: AsyncSession = perf_session_provider.get_session()
     try:
         max_id = await get_max_id(session)
@@ -1278,7 +1279,7 @@ async def test_perf_db_get() -> None:
         await session.close()
 
     if max_id <= 0:
-        pytest.skip("perf_result 테이블에 seed 데이터가 없습니다.")
+        pytest.skip('perf_result 테이블에 seed 데이터가 없습니다.')
 
     target_ids = [min(v, max_id) for v in READ_ROW_VALUES]
 
@@ -1287,21 +1288,21 @@ async def test_perf_db_get() -> None:
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST get one by pk(id)] sqlalchemy", get_sa, iter=ITERATIONS)
+    print_table('[TEST get one by pk(id)] sqlalchemy', get_sa, iter=ITERATIONS)
 
     get_repo = await run_benchmark_create_or_update(
         GET__repo_get,
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST get one by pk(id)] baserepo", get_repo, iter=ITERATIONS)
+    print_table('[TEST get one by pk(id)] baserepo', get_repo, iter=ITERATIONS)
 
     get_sqlm = await run_benchmark_create_or_update(
         GET__sqlmodel_get,
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST get one by pk(id)] sqlmodel", get_sqlm, iter=ITERATIONS)
+    print_table('[TEST get one by pk(id)] sqlmodel', get_sqlm, iter=ITERATIONS)
 
 
 @pytest.mark.asyncio
@@ -1315,25 +1316,25 @@ async def test_perf_db_count() -> None:
         await session.close()
 
     if max_id <= 0:
-        pytest.skip("perf_result 테이블에 seed 데이터가 없습니다.")
+        pytest.skip('perf_result 테이블에 seed 데이터가 없습니다.')
 
     # COUNT ALL
     sa_all = await run_benchmark_noarg(COUNT_ALL__sa, iterations=ITERATIONS)
     repo_all = await run_benchmark_noarg(COUNT_ALL__repo, iterations=ITERATIONS)
     sqlm_all = await run_benchmark_noarg(COUNT_ALL__sqlmodel, iterations=ITERATIONS)
 
-    print_one("[TEST count(*)] - sqlalchemy", sa_all, iter=ITERATIONS)
-    print_one("[TEST count(*)] - baserepo", repo_all, iter=ITERATIONS)
-    print_one("[TEST count(*)] - sqlmodel", sqlm_all, iter=ITERATIONS)
+    print_one('[TEST count(*)] - sqlalchemy', sa_all, iter=ITERATIONS)
+    print_one('[TEST count(*)] - baserepo', repo_all, iter=ITERATIONS)
+    print_one('[TEST count(*)] - sqlmodel', sqlm_all, iter=ITERATIONS)
 
     # COUNT WHERE 3
     sa_w3 = await run_benchmark_noarg(COUNT_WHERE3__sa, iterations=ITERATIONS)
     repo_w3 = await run_benchmark_noarg(COUNT_WHERE3__repo, iterations=ITERATIONS)
     sqlm_w3 = await run_benchmark_noarg(COUNT_WHERE3__sqlmodel, iterations=ITERATIONS)
 
-    print_one("[TEST count(*) with 3 WHERE] - sqlalchemy", sa_w3, iter=ITERATIONS)
-    print_one("[TEST count(*) with 3 WHERE] - baserepo", repo_w3, iter=ITERATIONS)
-    print_one("[TEST count(*) with 3 WHERE] - sqlmodel", sqlm_w3, iter=ITERATIONS)
+    print_one('[TEST count(*) with 3 WHERE] - sqlalchemy', sa_w3, iter=ITERATIONS)
+    print_one('[TEST count(*) with 3 WHERE] - baserepo', repo_w3, iter=ITERATIONS)
+    print_one('[TEST count(*) with 3 WHERE] - sqlmodel', sqlm_w3, iter=ITERATIONS)
 
 
 @pytest.mark.asyncio
@@ -1346,7 +1347,7 @@ async def test_perf_db_delete_one() -> None:
         await session.close()
 
     if max_id <= 0:
-        pytest.skip("perf_result 테이블에 seed 데이터가 없습니다.")
+        pytest.skip('perf_result 테이블에 seed 데이터가 없습니다.')
 
     target_ids = [min(v, max_id) for v in READ_ROW_VALUES]
 
@@ -1355,18 +1356,18 @@ async def test_perf_db_delete_one() -> None:
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST delete one by pk(id) + restore] sqlalchemy", del_sa, iter=ITERATIONS)
+    print_table('[TEST delete one by pk(id) + restore] sqlalchemy', del_sa, iter=ITERATIONS)
 
     del_repo = await run_benchmark_create_or_update(
         DELETE__repo_delete,
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST delete one by pk(id) + restore] baserepo", del_repo, iter=ITERATIONS)
+    print_table('[TEST delete one by pk(id) + restore] baserepo', del_repo, iter=ITERATIONS)
 
     del_sqlm = await run_benchmark_create_or_update(
         DELETE__sqlmodel,
         target_ids,
         iterations=ITERATIONS,
     )
-    print_table("[TEST delete one by pk(id) + restore] sqlmodel", del_sqlm, iter=ITERATIONS)
+    print_table('[TEST delete one by pk(id) + restore] sqlmodel', del_sqlm, iter=ITERATIONS)
