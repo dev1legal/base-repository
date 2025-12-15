@@ -3,11 +3,10 @@ from __future__ import annotations
 import csv
 import os
 import sqlite3
-from typing import Sequence
+from collections.abc import Sequence
 
 from tests.perf.db_config import PerfDBKind, get_perf_engine, get_perf_settings
 from tests.perf.seed.config import CSV_PATH, PERF_RESULT_COLUMNS, PERF_RESULT_TABLE
-
 
 BATCH = 200_000
 
@@ -34,8 +33,7 @@ async def bulk_seed_load() -> None:
         _bulk_seed_load_sqlite(settings.dsn)
         return
 
-    raise RuntimeError(f"Unsupported perf DB kind: {settings.kind}")
-
+    raise RuntimeError(f'Unsupported perf DB kind: {settings.kind}')
 
 
 async def _bulk_seed_load_mysql() -> None:
@@ -46,7 +44,7 @@ async def _bulk_seed_load_mysql() -> None:
     """
     engine = get_perf_engine()
 
-    column_names = ", ".join(name for name, _ in PERF_RESULT_COLUMNS)
+    column_names = ', '.join(name for name, _ in PERF_RESULT_COLUMNS)
 
     query = f"""
         LOAD DATA INFILE '/var/lib/mysql-files/perf_seed.csv'
@@ -59,7 +57,6 @@ async def _bulk_seed_load_mysql() -> None:
         await conn.exec_driver_sql(query)
 
 
-
 async def _bulk_seed_load_postgres() -> None:
     """
     < Postgres: COPY FROM 로 CSV를 로딩합니다 >
@@ -69,7 +66,7 @@ async def _bulk_seed_load_postgres() -> None:
     """
     engine = get_perf_engine()
 
-    column_names = ", ".join(name for name, _ in PERF_RESULT_COLUMNS)
+    column_names = ', '.join(name for name, _ in PERF_RESULT_COLUMNS)
 
     query = f"""
         COPY {PERF_RESULT_TABLE} ({column_names})
@@ -79,7 +76,6 @@ async def _bulk_seed_load_postgres() -> None:
 
     async with engine.begin() as conn:
         await conn.exec_driver_sql(query)
-
 
 
 def _bulk_seed_load_sqlite(dsn: str) -> None:
@@ -93,14 +89,14 @@ def _bulk_seed_load_sqlite(dsn: str) -> None:
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
     col_names = [name for name, _ in PERF_RESULT_COLUMNS]
-    placeholders = ", ".join(["?"] * len(col_names))
-    insert_sql = f"INSERT INTO {PERF_RESULT_TABLE} ({', '.join(col_names)}) VALUES ({placeholders})"
+    placeholders = ', '.join(['?'] * len(col_names))
+    insert_sql = f'INSERT INTO {PERF_RESULT_TABLE} ({", ".join(col_names)}) VALUES ({placeholders})'
 
     con = sqlite3.connect(db_path)
     try:
-        con.execute("BEGIN")
+        con.execute('BEGIN')
 
-        with open(CSV_PATH, newline="") as f:
+        with open(CSV_PATH, newline='') as f:
             reader = csv.reader(f)
 
             buf: list[Sequence[str]] = []
@@ -118,15 +114,14 @@ def _bulk_seed_load_sqlite(dsn: str) -> None:
         con.close()
 
 
-
 def _sqlite_path_from_dsn(dsn: str) -> str:
     """
     < sqlite DSN에서 파일 경로를 뽑아냅니다 >
     1. sqlite+aiosqlite:///abs/path.db 형태를 지원합니다.
     2. sqlite+aiosqlite:///<rel/path.db> 형태도 그대로 반환합니다.
     """
-    prefix = "sqlite+aiosqlite:///"
+    prefix = 'sqlite+aiosqlite:///'
     if not dsn.startswith(prefix):
-        raise ValueError(f"Unexpected sqlite dsn: {dsn}")
+        raise ValueError(f'Unexpected sqlite dsn: {dsn}')
 
-    return dsn[len(prefix):]
+    return dsn[len(prefix) :]

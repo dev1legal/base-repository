@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
 import pytest
+from pydantic import BaseModel, ConfigDict
 
 from base_repository.validator import validate_config_from_attributes_true, validate_schema_base
 
@@ -42,7 +42,7 @@ def test_validate_config_from_attributes_true__missing_model_config_returns_fals
     3. Assert it returns False.
     """
     # 1
-    Temp = type("Temp", (), {})
+    Temp = type('Temp', (), {})
 
     # 2
     out = validate_config_from_attributes_true(Temp)  # type: ignore[arg-type]
@@ -131,7 +131,7 @@ def test_validate_schema_base__not_subclass_of_base_model_raises() -> None:
 
     # 2
     # 3
-    with pytest.raises(TypeError, match=r"mapping_schema must be a subclass of pydantic\.BaseModel\."):
+    with pytest.raises(TypeError, match=r'mapping_schema must be a subclass of pydantic\.BaseModel\.'):
         validate_schema_base(schema)  # type: ignore[arg-type]
 
 
@@ -147,7 +147,7 @@ def test_validate_schema_base__from_attributes_not_true_raises() -> None:
 
     # 2
     # 3
-    with pytest.raises(TypeError, match=r"mapping_schema\.model_config\.from_attributes must be set to True\."):
+    with pytest.raises(TypeError, match=r'mapping_schema\.model_config\.from_attributes must be set to True\.'):
         validate_schema_base(schema)
 
 

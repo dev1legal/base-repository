@@ -1,6 +1,6 @@
 <div align="right">
   <a href="https://4jades.github.io/base-repository/about_performance.md">English</a> | <a href="https://4jades.github.io/base-repository/about_performance.ko.md">한국어</a>
-</div>    
+</div>
 
 ## Performance Test
 
@@ -9,7 +9,7 @@ BaseRepository는 SQLAlchemy를 래핑한 라이브러리이므로 성능 검증
 1. 래핑 오버헤드가 얼마나 작은가 (CPU-bound)
 2. 동일한 목적의 코드 대비 성능 차이가 얼마나 나는가 (DB-bound 포함)
    * 2-1. SQLAlchemy 베스트 프랙티스 쿼리/사용 패턴 대비
-   * 2-2. 다른 래핑 라이브러리(SQLModel) 대비  
+   * 2-2. 다른 래핑 라이브러리(SQLModel) 대비
      단, SQLModel 비교는 SQLModel이 “직접 제공하는 기능” 범위에서만 수행합니다.
 
 ---
@@ -153,8 +153,8 @@ Create와 동일하게 DB 실행은 제외하고 update 경로 준비까지의 C
   * Docker Compose
 * 시드 데이터
 
-  * 테이블 당 1십만 row 
-  * 테이블 당 1백만 row 
+  * 테이블 당 1십만 row
+  * 테이블 당 1백만 row
   * 테이블 당 1천만 row (아래 테스트 케이스)
   * 테이블 당 5천만 row
   * 테이블 당 1억 row
@@ -335,27 +335,27 @@ NOTE: 리포트 이미지(`tests/perf/report/**`)는 저장소에 포함하지 �
 #### 3.2 결과 첨부
 
 
-#### <a id="attached-cpu-results"></a>CPU BOUND    
+#### <a id="attached-cpu-results"></a>CPU BOUND
 
 
-- run_id: `20251127T050031Z`, iter: `50`, unit: `ms`  
+- run_id: `20251127T050031Z`, iter: `50`, unit: `ms`
   → <a href="./perf_results/run_20251127T050031Z/" target="_blank" rel="noreferrer">
        View full HTML report
     </a>
 
-#### <a id="attached-db-results"></a>USE DB    
+#### <a id="attached-db-results"></a>USE DB
 
-- **MySQL** — run_id: `20251126T065306Z`, iter: `100`, unit: `ms`, seed: `10000000`  
+- **MySQL** — run_id: `20251126T065306Z`, iter: `100`, unit: `ms`, seed: `10000000`
   → <a href="./perf_results/run_20251126T065306Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>
 
-- **PostgreSQL** — run_id: `20251205T025441Z`, iter: `100`, unit: `ms`, seed: `100000`  
+- **PostgreSQL** — run_id: `20251205T025441Z`, iter: `100`, unit: `ms`, seed: `100000`
   → <a href="./perf_results/run_20251205T025441Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>
 
-- **SQLite** — run_id: `20251205T030413Z`, iter: `100`, unit: `ms`, seed: `100000`  
+- **SQLite** — run_id: `20251205T030413Z`, iter: `100`, unit: `ms`, seed: `100000`
   → <a href="./perf_results/run_20251205T030413Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>

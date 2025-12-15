@@ -21,7 +21,6 @@ from .models import Result
 from .schemas import ResultStrictSchema
 
 
-
 # Filter used by StrictRepo tests
 @dataclass
 class RFilter(BaseRepoFilter):
@@ -30,11 +29,9 @@ class RFilter(BaseRepoFilter):
     tenant_id: int | None = None
 
 
-
 # Repository with mapping_schema enabled (schema conversion by default)
 class StrictRepo(BaseRepository[Result, ResultStrictSchema]):
     filter_class = RFilter
-
 
 
 # Local ORM base for additional models in this test file
@@ -42,14 +39,12 @@ class Base(DeclarativeBase):
     pass
 
 
-
 # Test model: Integer autoincrement primary key
 class AutoIncModel(Base):
-    __tablename__ = "autoinc_model"
+    __tablename__ = 'autoinc_model'
 
     pk: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str | None] = mapped_column(nullable=True)
-
 
 
 # Pydantic schema aligned with AutoIncModel
@@ -60,12 +55,10 @@ class AutoIncSchema(BaseModel):
     name: str | None = None
 
 
-
 # Dummy filter used for AutoIncModel
 @dataclass
 class DummyFilter(BaseRepoFilter):
     pk: int | None = None
-
 
 
 @pytest.mark.asyncio
@@ -79,8 +72,8 @@ async def test_execute_select_listquery_returns_list_and_converts_by_default() -
     """
     # 1
     rows = [
-        Result(id=1, item_id=10, sub_category_id=None, result_value="A", is_abnormal=None, tenant_id=1, checkup_id=100),
-        Result(id=2, item_id=10, sub_category_id=None, result_value="B", is_abnormal=None, tenant_id=1, checkup_id=100),
+        Result(id=1, item_id=10, sub_category_id=None, result_value='A', is_abnormal=None, tenant_id=1, checkup_id=100),
+        Result(id=2, item_id=10, sub_category_id=None, result_value='B', is_abnormal=None, tenant_id=1, checkup_id=100),
     ]
 
     # 2
@@ -95,7 +88,6 @@ async def test_execute_select_listquery_returns_list_and_converts_by_default() -
     assert isinstance(got[0], ResultStrictSchema)
 
 
-
 @pytest.mark.asyncio
 async def test_execute_select_convert_schema_false_returns_orm() -> None:
     """
@@ -106,7 +98,9 @@ async def test_execute_select_convert_schema_false_returns_orm() -> None:
     """
     # 1
     rows = [
-        Result(id=1, item_id=10, sub_category_id=None, result_value=None, is_abnormal=None, tenant_id=1, checkup_id=100),
+        Result(
+            id=1, item_id=10, sub_category_id=None, result_value=None, is_abnormal=None, tenant_id=1, checkup_id=100
+        ),
     ]
 
     # 2
@@ -115,8 +109,7 @@ async def test_execute_select_convert_schema_false_returns_orm() -> None:
     got = await repo.get_list(flt=RFilter(tenant_id=1), convert_schema=False)
 
     # 3
-    assert type(got[0]).__name__ == "Result"
-
+    assert type(got[0]).__name__ == 'Result'
 
 
 @pytest.mark.asyncio
@@ -143,7 +136,6 @@ async def test_get_and_get_or_fail() -> None:
     assert got.id == 99
 
 
-
 @pytest.mark.asyncio
 async def test_get_or_fail_raises_when_missing() -> None:
     """
@@ -160,7 +152,6 @@ async def test_get_or_fail_raises_when_missing() -> None:
     # 3
     with pytest.raises(ValueError):
         _ = await repo.get_or_fail(RFilter(id=404))
-
 
 
 @pytest.mark.asyncio
@@ -195,7 +186,7 @@ async def test_count_and_delete_and_create() -> None:
         ResultStrictSchema(
             item_id=1,
             sub_category_id=None,
-            result_value="X",
+            result_value='X',
             is_abnormal=None,
             tenant_id=1,
             checkup_id=1,
@@ -204,7 +195,6 @@ async def test_count_and_delete_and_create() -> None:
     assert isinstance(created, ResultStrictSchema)
     assert created.item_id == 1
     assert session.added and session.flushed
-
 
 
 @pytest.mark.asyncio
@@ -231,12 +221,12 @@ async def test_create_many_converts_by_default_and_records_add_all() -> None:
                 checkup_id=1,
             ),
             {
-                "item_id": 2,
-                "sub_category_id": None,
-                "result_value": None,
-                "is_abnormal": None,
-                "tenant_id": 1,
-                "checkup_id": 1,
+                'item_id': 2,
+                'sub_category_id': None,
+                'result_value': None,
+                'is_abnormal': None,
+                'tenant_id': 1,
+                'checkup_id': 1,
             },
         ]
     )
@@ -248,7 +238,6 @@ async def test_create_many_converts_by_default_and_records_add_all() -> None:
     assert [c.item_id for c in created] == [1, 2]
     assert len(session.added_all) == 2
     assert session.flushed
-
 
 
 @pytest.mark.asyncio
@@ -282,8 +271,7 @@ async def test_create_many_skip_convert_returns_orm_objects() -> None:
     assert created_any is not None
     created = cast(list[Any], created_any)
     assert len(created) == 1
-    assert type(created[0]).__name__ == "Result"
-
+    assert type(created[0]).__name__ == 'Result'
 
 
 @pytest.mark.asyncio
@@ -294,6 +282,7 @@ async def test_default_convert_schema_guard_at_init() -> None:
     2. Instantiate with default_convert_schema=True.
     3. Assert ValueError is raised.
     """
+
     # 1
     class NoSchemaRepo(BaseRepository[Result]):
         model = Result
@@ -307,7 +296,6 @@ async def test_default_convert_schema_guard_at_init() -> None:
         _ = NoSchemaRepo(cast(AsyncSession, session), default_convert_schema=True)
 
 
-
 @pytest.mark.asyncio
 async def test_sessionless_init_then_method_param_session_works() -> None:
     """
@@ -318,8 +306,8 @@ async def test_sessionless_init_then_method_param_session_works() -> None:
     """
     # 1
     rows = [
-        Result(id=1, item_id=10, sub_category_id=None, result_value="A", is_abnormal=None, tenant_id=1, checkup_id=100),
-        Result(id=2, item_id=10, sub_category_id=None, result_value="B", is_abnormal=None, tenant_id=1, checkup_id=100),
+        Result(id=1, item_id=10, sub_category_id=None, result_value='A', is_abnormal=None, tenant_id=1, checkup_id=100),
+        Result(id=2, item_id=10, sub_category_id=None, result_value='B', is_abnormal=None, tenant_id=1, checkup_id=100),
     ]
     s = FakeAsyncSession(script=[FakeResult(rows)])
 
@@ -330,7 +318,6 @@ async def test_sessionless_init_then_method_param_session_works() -> None:
     got = await repo.get_list(flt=RFilter(tenant_id=1), session=cast(AsyncSession, s))
     assert [g.id for g in got] == [1, 2]
     assert isinstance(got[0], ResultStrictSchema)
-
 
 
 @pytest.mark.asyncio
@@ -348,7 +335,6 @@ async def test_raises_when_no_session_anywhere() -> None:
     # 3
     with pytest.raises(RuntimeError):
         _ = await repo.get_list(flt=RFilter(tenant_id=1))
-
 
 
 @pytest.mark.asyncio
@@ -374,7 +360,6 @@ async def test_method_param_session_overrides_repo_session() -> None:
     assert len(got) == 1 and got[0].id == 42
 
 
-
 @pytest.mark.asyncio
 async def test_create_uses_overridden_session_for_add_and_flush() -> None:
     """
@@ -393,7 +378,7 @@ async def test_create_uses_overridden_session_for_add_and_flush() -> None:
         ResultStrictSchema(
             item_id=123,
             sub_category_id=None,
-            result_value="X",
+            result_value='X',
             is_abnormal=None,
             tenant_id=77,
             checkup_id=555,
@@ -404,9 +389,8 @@ async def test_create_uses_overridden_session_for_add_and_flush() -> None:
     # 3
     assert isinstance(created, ResultStrictSchema)
     assert created.item_id == 123
-    assert getattr(s2, "flushed", False) is True
-    assert not getattr(s1, "flushed", False)
-
+    assert getattr(s2, 'flushed', False) is True
+    assert not getattr(s1, 'flushed', False)
 
 
 @pytest.mark.asyncio
@@ -417,6 +401,7 @@ async def test_model_inference_when_model_not_declared() -> None:
     2. Instantiate it.
     3. Assert repo.model is inferred as Result.
     """
+
     # 1
     class NoModelRepo(BaseRepository[Result, ResultStrictSchema]):
         filter_class = RFilter
@@ -427,7 +412,6 @@ async def test_model_inference_when_model_not_declared() -> None:
 
     # 3
     assert repo.model is Result
-
 
 
 @pytest.mark.asyncio
@@ -446,7 +430,7 @@ async def test_update_from_model_dirty_check_and_flush() -> None:
         id=1,
         item_id=10,
         sub_category_id=None,
-        result_value="A",
+        result_value='A',
         is_abnormal=None,
         tenant_id=1,
         checkup_id=100,
@@ -455,15 +439,14 @@ async def test_update_from_model_dirty_check_and_flush() -> None:
     # 2
     after = await repo.update_from_model(
         base=base,
-        update={"result_value": "Z"},
+        update={'result_value': 'Z'},
         convert_schema=True,
     )
 
     # 3
     assert isinstance(after, ResultStrictSchema)
-    assert after.result_value == "Z"
+    assert after.result_value == 'Z'
     assert s.flushed is True
-
 
 
 @pytest.mark.asyncio
@@ -484,7 +467,7 @@ async def test_create_from_model_add_and_flush_and_schema_convert() -> None:
             id=999,
             item_id=1,
             sub_category_id=None,
-            result_value="X",
+            result_value='X',
             is_abnormal=None,
             tenant_id=7,
             checkup_id=77,
@@ -497,7 +480,6 @@ async def test_create_from_model_add_and_flush_and_schema_convert() -> None:
     assert s.flushed is True
 
 
-
 def test_subclass_definition_does_not_call_sa_mapper(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     < __init_subclass__ must not call sa_mapper() at class definition time >
@@ -508,13 +490,13 @@ def test_subclass_definition_does_not_call_sa_mapper(monkeypatch: pytest.MonkeyP
     # 1
     import base_repository.repository.base_repo as base_repo_mod
 
-    called = {"count": 0}
+    called = {'count': 0}
 
     def fake_sa_mapper(_: object) -> object:
-        called["count"] += 1
+        called['count'] += 1
         return object()
 
-    monkeypatch.setattr(base_repo_mod, "sa_mapper", fake_sa_mapper)
+    monkeypatch.setattr(base_repo_mod, 'sa_mapper', fake_sa_mapper)
 
     # 2
     class TmpSchema(BaseModel):
@@ -522,20 +504,15 @@ def test_subclass_definition_does_not_call_sa_mapper(monkeypatch: pytest.MonkeyP
 
         id: int
 
-
-
     class TmpModel(DeclarativeBase):
         __abstract__ = True
-
-
 
     class TmpRepo(BaseRepository[TmpModel, TmpSchema]):
         filter_class = RFilter
 
     # 3
-    assert called["count"] == 0
+    assert called['count'] == 0
     assert TmpRepo._default_convert_schema is True
-
 
 
 def test_init_session_warning_cases() -> None:
@@ -544,6 +521,7 @@ def test_init_session_warning_cases() -> None:
     1. With SessionProvider: passing a session warns and provider session takes precedence.
     2. Without SessionProvider: passing a session warns about stale/closed session handling.
     """
+
     # 1
     class Provider(SessionProvider):
         def __init__(self, s: AsyncSession) -> None:
@@ -552,8 +530,6 @@ def test_init_session_warning_cases() -> None:
         def get_session(self) -> AsyncSession:
             return self._s
 
-
-
     class RepoWithProvider(BaseRepository[AutoIncModel, AutoIncSchema]):
         filter_class = DummyFilter
 
@@ -561,7 +537,7 @@ def test_init_session_warning_cases() -> None:
     s2 = cast(AsyncSession, FakeAsyncSession(script=[]))
     RepoWithProvider.configure_session_provider(Provider(s2))
 
-    with pytest.warns(UserWarning, match="SessionProvider takes precedence"):
+    with pytest.warns(UserWarning, match='SessionProvider takes precedence'):
         repo_p = RepoWithProvider(s1)
 
     assert repo_p.session is s2
@@ -572,9 +548,8 @@ def test_init_session_warning_cases() -> None:
 
     s3 = cast(AsyncSession, FakeAsyncSession(script=[]))
 
-    with pytest.warns(UserWarning, match="Stale or closed session handling"):
+    with pytest.warns(UserWarning, match='Stale or closed session handling'):
         _ = RepoNoProvider(s3)
-
 
 
 @pytest.mark.asyncio
@@ -584,19 +559,19 @@ async def test_get_list_cursor_requires_order_by_then_requires_size() -> None:
     1. Without order_by, get_list(cursor=...) must raise about order_by requirement.
     2. With order_by but size=None, get_list must raise about limit(size) requirement.
     """
+
     # 1
     class Repo(BaseRepository[AutoIncModel, AutoIncSchema]):
         filter_class = DummyFilter
 
     repo = Repo(cast(AsyncSession, FakeAsyncSession(script=[FakeResult([])])))
 
-    with pytest.raises(ValueError, match="Cursor paging requires order_by"):
+    with pytest.raises(ValueError, match='Cursor paging requires order_by'):
         await repo.get_list(cursor={}, size=10)
 
     # 2
-    with pytest.raises(ValueError, match="Keyset paging requires limit"):
+    with pytest.raises(ValueError, match='Keyset paging requires limit'):
         await repo.get_list(cursor={}, order_by=[AutoIncModel.pk.asc()], size=None)
-
 
 
 def test_autoinc_pk_keys_includes_only_integer_autoincrement_primary_keys() -> None:
@@ -605,47 +580,38 @@ def test_autoinc_pk_keys_includes_only_integer_autoincrement_primary_keys() -> N
     1. Integer PK + autoincrement=True must be included.
     2. Non-Integer PK + autoincrement=True must be excluded.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class IntAutoPKModel(Base2):
-        __tablename__ = "int_autopk_model_for_autoinc_keys"
+        __tablename__ = 'int_autopk_model_for_autoinc_keys'
 
         pk: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
 
-
-
     @dataclass
     class IntFilter(BaseRepoFilter):
         pk: int | None = None
-
-
 
     class IntRepo(BaseRepository[IntAutoPKModel]):
         model = IntAutoPKModel
         filter_class = IntFilter
 
     int_repo = IntRepo(cast(AsyncSession, FakeAsyncSession(script=[])))
-    assert int_repo._autoinc_pk_keys() == {"pk"}
+    assert int_repo._autoinc_pk_keys() == {'pk'}
 
     # 2
     class StrAutoPKModel(Base2):
-        __tablename__ = "str_autopk_model_for_autoinc_keys"
+        __tablename__ = 'str_autopk_model_for_autoinc_keys'
 
         pk: Mapped[str] = mapped_column(String, primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
 
-
-
     @dataclass
     class StrFilter(BaseRepoFilter):
         pk: str | None = None
-
-
 
     class StrRepo(BaseRepository[StrAutoPKModel]):
         model = StrAutoPKModel
@@ -655,25 +621,24 @@ def test_autoinc_pk_keys_includes_only_integer_autoincrement_primary_keys() -> N
     assert str_repo._autoinc_pk_keys() == set()
 
 
-
 def test_schema_payload_drops_unknown_keys_and_autoinc_pk() -> None:
     """
     < _schema_payload filters to model columns and drops autoincrement PK keys >
     1. Provide mapping payload including pk and unknown keys.
     2. Assert pk and unknown are removed and known keys remain.
     """
+
     # 1
     class Repo(BaseRepository[AutoIncModel, AutoIncSchema]):
         filter_class = DummyFilter
 
     repo = Repo(cast(AsyncSession, FakeAsyncSession(script=[])))
-    payload = repo._schema_payload({"pk": 123, "name": "A", "unknown": "X"})
+    payload = repo._schema_payload({'pk': 123, 'name': 'A', 'unknown': 'X'})
 
     # 2
-    assert "pk" not in payload
-    assert "unknown" not in payload
-    assert payload["name"] == "A"
-
+    assert 'pk' not in payload
+    assert 'unknown' not in payload
+    assert payload['name'] == 'A'
 
 
 def test_schema_payload_from_pydantic_exclude_unset() -> None:
@@ -683,6 +648,7 @@ def test_schema_payload_from_pydantic_exclude_unset() -> None:
     2. Build payload.
     3. Assert optional unset fields are absent and autoinc pk is absent.
     """
+
     # 1
     class Repo(BaseRepository[AutoIncModel, AutoIncSchema]):
         filter_class = DummyFilter
@@ -694,9 +660,8 @@ def test_schema_payload_from_pydantic_exclude_unset() -> None:
     payload = repo._schema_payload(data)
 
     # 3
-    assert "name" not in payload
-    assert "pk" not in payload
-
+    assert 'name' not in payload
+    assert 'pk' not in payload
 
 
 def test_schema_to_orm_falls_back_when_mapper_to_orm_not_implemented() -> None:
@@ -706,6 +671,7 @@ def test_schema_to_orm_falls_back_when_mapper_to_orm_not_implemented() -> None:
     2. Instantiate repo with that mapper.
     3. Call _schema_to_orm(schema) and assert ORM is built via payload path.
     """
+
     # 1
     class BadMapper(BaseMapper):
         def to_schema(self, orm_object: AutoIncModel) -> AutoIncSchema:
@@ -722,10 +688,9 @@ def test_schema_to_orm_falls_back_when_mapper_to_orm_not_implemented() -> None:
     repo = Repo(cast(AsyncSession, FakeAsyncSession(script=[])))
 
     # 3
-    obj = repo._schema_to_orm(AutoIncSchema(name="A"))
+    obj = repo._schema_to_orm(AutoIncSchema(name='A'))
     assert isinstance(obj, AutoIncModel)
-    assert obj.name == "A"
-
+    assert obj.name == 'A'
 
 
 def test_convert_uses_mapper_to_schema_then_falls_back_to_pydantic_on_not_implemented() -> None:
@@ -735,6 +700,7 @@ def test_convert_uses_mapper_to_schema_then_falls_back_to_pydantic_on_not_implem
     2. When mapper succeeds, assert the mapper-produced schema is returned.
     3. When mapper fails, assert fallback schema conversion is returned.
     """
+
     # 1
     class Mapper(BaseMapper):
         def __init__(self, fail: bool) -> None:
@@ -743,7 +709,7 @@ def test_convert_uses_mapper_to_schema_then_falls_back_to_pydantic_on_not_implem
         def to_schema(self, orm_object: AutoIncModel) -> AutoIncSchema:
             if self._fail:
                 raise NotImplementedError()
-            return AutoIncSchema(pk=999, name="M")
+            return AutoIncSchema(pk=999, name='M')
 
         def to_orm(self, schema_object: AutoIncSchema) -> AutoIncModel:
             return AutoIncModel(pk=1, name=schema_object.name)
@@ -753,17 +719,16 @@ def test_convert_uses_mapper_to_schema_then_falls_back_to_pydantic_on_not_implem
 
     # 2
     r1 = Repo(cast(AsyncSession, FakeAsyncSession(script=[])), mapper=Mapper(fail=False))
-    out1 = r1._convert(AutoIncModel(pk=1, name="A"), convert_schema=None)
+    out1 = r1._convert(AutoIncModel(pk=1, name='A'), convert_schema=None)
     assert isinstance(out1, AutoIncSchema)
     assert out1.pk == 999
 
     # 3
     r2 = Repo(cast(AsyncSession, FakeAsyncSession(script=[])), mapper=Mapper(fail=True))
-    out2 = r2._convert(AutoIncModel(pk=2, name="B"), convert_schema=None)
+    out2 = r2._convert(AutoIncModel(pk=2, name='B'), convert_schema=None)
     assert isinstance(out2, AutoIncSchema)
     assert out2.pk == 2
-    assert out2.name == "B"
-
+    assert out2.name == 'B'
 
 
 def test_convert_returns_row_when_schema_missing() -> None:
@@ -773,6 +738,7 @@ def test_convert_returns_row_when_schema_missing() -> None:
     2. Pass a real ORM row into _convert.
     3. Assert the same object is returned (no conversion path is possible).
     """
+
     # 1
     class RepoNoSchema(BaseRepository[AutoIncModel]):
         model = AutoIncModel
@@ -782,7 +748,7 @@ def test_convert_returns_row_when_schema_missing() -> None:
     repo_no_schema = RepoNoSchema(cast(AsyncSession, FakeAsyncSession(script=[])))
 
     # 2
-    row = AutoIncModel(pk=1, name="A")
+    row = AutoIncModel(pk=1, name='A')
     out = repo_no_schema._convert(row, convert_schema=False)
 
     # 3
@@ -798,6 +764,7 @@ def test_convert_none_row_returns_none_runtime_guard() -> None:
          but validates the defensive runtime behavior.
     3. Assert None is returned.
     """
+
     # 1
     class RepoWithSchema(BaseRepository[AutoIncModel, AutoIncSchema]):
         filter_class = DummyFilter
@@ -809,7 +776,6 @@ def test_convert_none_row_returns_none_runtime_guard() -> None:
 
     # 3
     assert out_none is None
-
 
 
 @pytest.mark.asyncio
@@ -831,9 +797,9 @@ async def test_execute_rejects_non_listquery_via_query_to_stmt() -> None:
     # 2
     # 3
 
-    stmt = insert(AutoIncModel).values(name="A")
+    stmt = insert(AutoIncModel).values(name='A')
 
-    with pytest.raises(TypeError, match="Unsupported query/statement type"):
+    with pytest.raises(TypeError, match='Unsupported query/statement type'):
         await repo.execute(cast(Any, stmt))
 
 
@@ -850,11 +816,10 @@ async def test_update_builds_values_with_schema_payload_filtering() -> None:
     repo = StrictRepo(cast(AsyncSession, s))
 
     # 2
-    updated = await repo.update(RFilter(id=1), update={"result_value": "Z", "unknown": 123})
+    updated = await repo.update(RFilter(id=1), update={'result_value': 'Z', 'unknown': 123})
 
     # 3
     assert updated == 3
-
 
 
 def test_init_mapping_schema_param_validates_schema_against_model_and_enables_default_conversion(
@@ -868,27 +833,22 @@ def test_init_mapping_schema_param_validates_schema_against_model_and_enables_de
     4. Instantiate Repo(mapping_schema=...).
     5. Assert validation was called once and default conversion is enabled.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class AutoIncModel2(Base2):
-        __tablename__ = "autoinc_model_for_init_schema_param"
+        __tablename__ = 'autoinc_model_for_init_schema_param'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
-
-
 
     class AutoIncSchema2(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         pk: int | None = None
         name: str | None = None
-
-
 
     @dataclass
     class DummyFilter2(BaseRepoFilter):
@@ -899,24 +859,23 @@ def test_init_mapping_schema_param_validates_schema_against_model_and_enables_de
         filter_class = DummyFilter2
 
     # 3
-    called = {"n": 0}
+    called = {'n': 0}
     orig = Repo._validate_schema_against_model
 
     def wrapped(self: Repo, schema: type[BaseModel]) -> None:
-        called["n"] += 1
+        called['n'] += 1
         return orig(self, schema)
 
-    monkeypatch.setattr(Repo, "_validate_schema_against_model", wrapped)
+    monkeypatch.setattr(Repo, '_validate_schema_against_model', wrapped)
 
     # 4
     s = cast(AsyncSession, FakeAsyncSession(script=[]))
     repo = Repo(s)
 
     # 5
-    assert called["n"] == 1
+    assert called['n'] == 1
     assert repo.mapping_schema is AutoIncSchema2
     assert repo._default_convert_schema is True
-
 
 
 def test_init_default_convert_schema_override_assigns_and_disables_conversion_even_when_schema_exists() -> None:
@@ -926,27 +885,22 @@ def test_init_default_convert_schema_override_assigns_and_disables_conversion_ev
     2. Instantiate with default_convert_schema=False.
     3. Assert _default_convert_schema is False and _convert returns raw ORM row.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class AutoIncModel2(Base2):
-        __tablename__ = "autoinc_model_for_default_convert_override"
+        __tablename__ = 'autoinc_model_for_default_convert_override'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
-
-
 
     class AutoIncSchema2(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         pk: int | None = None
         name: str | None = None
-
-
 
     @dataclass
     class DummyFilter2(BaseRepoFilter):
@@ -962,10 +916,9 @@ def test_init_default_convert_schema_override_assigns_and_disables_conversion_ev
     # 3
     assert repo._default_convert_schema is False
 
-    row = AutoIncModel2(pk=1, name="A")
+    row = AutoIncModel2(pk=1, name='A')
     out = repo._convert(row, convert_schema=None)
     assert out is row
-
 
 
 def test_init_rejects_non_base_mapper_instance_with_clear_type_error() -> None:
@@ -975,27 +928,22 @@ def test_init_rejects_non_base_mapper_instance_with_clear_type_error() -> None:
     2. Instantiate with mapper=object().
     3. Assert TypeError with a clear message.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class AutoIncModel2(Base2):
-        __tablename__ = "autoinc_model_for_bad_mapper"
+        __tablename__ = 'autoinc_model_for_bad_mapper'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
-
-
 
     class AutoIncSchema2(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         pk: int | None = None
         name: str | None = None
-
-
 
     @dataclass
     class DummyFilter2(BaseRepoFilter):
@@ -1008,9 +956,8 @@ def test_init_rejects_non_base_mapper_instance_with_clear_type_error() -> None:
     s = cast(AsyncSession, FakeAsyncSession(script=[]))
 
     # 3
-    with pytest.raises(TypeError, match="must inherit from BaseMapper"):
+    with pytest.raises(TypeError, match='must inherit from BaseMapper'):
         _ = Repo(s, mapper=cast(Any, object()))
-
 
 
 def test_list_returns_listquery_instance_bound_to_model_and_keeps_filter_reference() -> None:
@@ -1020,24 +967,19 @@ def test_list_returns_listquery_instance_bound_to_model_and_keeps_filter_referen
     2. Call repo.list(flt=...).
     3. Assert the returned object is ListQuery and is bound to the model.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class M(Base2):
-        __tablename__ = "m_for_list_method"
+        __tablename__ = 'm_for_list_method'
 
         id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-
-
 
     @dataclass
     class F(BaseRepoFilter):
         id: int | None = None
-
-
 
     class Repo(BaseRepository[M]):
         model = M
@@ -1049,8 +991,7 @@ def test_list_returns_listquery_instance_bound_to_model_and_keeps_filter_referen
 
     # 3
     assert isinstance(q, ListQuery)
-    assert getattr(q, "model") is M
-
+    assert q.model is M
 
 
 @pytest.mark.asyncio
@@ -1062,53 +1003,45 @@ async def test_get_list_cursor_path_calls_limit_when_size_is_provided(monkeypatc
     3. Call get_list(cursor={}, order_by=[...], size=7).
     4. Assert limit(size) was called exactly once with size=7 and output is [].
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class AutoIncModel2(Base2):
-        __tablename__ = "autoinc_model_for_cursor_limit"
+        __tablename__ = 'autoinc_model_for_cursor_limit'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-
-
 
     class AutoIncSchema2(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         pk: int | None = None
 
-
-
     @dataclass
     class DummyFilter2(BaseRepoFilter):
         pk: int | None = None
 
-
-
     class Repo(BaseRepository[AutoIncModel2, AutoIncSchema2]):
         filter_class = DummyFilter2
-
 
     class Called(TypedDict):
         limit: int
         size: int | None
-        
-    called: Called = {"limit": 0, "size": None}
+
+    called: Called = {'limit': 0, 'size': None}
     orig_limit = ListQuery.limit
 
     def wrapped_limit(self: ListQuery, size: int) -> ListQuery:
-        called["limit"] += 1
-        called["size"] = size
+        called['limit'] += 1
+        called['size'] = size
         return orig_limit(self, size)
 
     async def stub_execute(self: Repo, *_: Any, **__: Any) -> list[Any]:
         return []
 
-    monkeypatch.setattr(ListQuery, "limit", wrapped_limit)
-    monkeypatch.setattr(Repo, "execute", stub_execute, raising=True)
+    monkeypatch.setattr(ListQuery, 'limit', wrapped_limit)
+    monkeypatch.setattr(Repo, 'execute', stub_execute, raising=True)
 
     # 2
     repo = Repo(cast(AsyncSession, FakeAsyncSession(script=[FakeResult([])])))
@@ -1118,9 +1051,8 @@ async def test_get_list_cursor_path_calls_limit_when_size_is_provided(monkeypatc
 
     # 4
     assert out == []
-    assert called["limit"] == 1
-    assert called["size"] == 7
-
+    assert called['limit'] == 1
+    assert called['size'] == 7
 
 
 @pytest.mark.asyncio
@@ -1134,31 +1066,24 @@ async def test_get_list_offset_paging_path_calls_paging_when_page_and_size_are_p
     3. Call get_list(page=2, size=10).
     4. Assert paging(...) was called once with (2, 10) and output is [].
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class AutoIncModel2(Base2):
-        __tablename__ = "autoinc_model_for_offset_paging"
+        __tablename__ = 'autoinc_model_for_offset_paging'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-
-
 
     class AutoIncSchema2(BaseModel):
         model_config = ConfigDict(from_attributes=True)
 
         pk: int | None = None
 
-
-
     @dataclass
     class DummyFilter2(BaseRepoFilter):
         pk: int | None = None
-
-
 
     class Repo(BaseRepository[AutoIncModel2, AutoIncSchema2]):
         filter_class = DummyFilter2
@@ -1168,21 +1093,20 @@ async def test_get_list_offset_paging_path_calls_paging_when_page_and_size_are_p
         page: int | None
         size: int | None
 
-
-    called: PagingCalled = {"paging": 0, "page": None, "size": None}
+    called: PagingCalled = {'paging': 0, 'page': None, 'size': None}
     orig_paging = ListQuery.paging
 
     def wrapped_paging(self: ListQuery, *, page: int, size: int) -> ListQuery:
-        called["paging"] += 1
-        called["page"] = page
-        called["size"] = size
+        called['paging'] += 1
+        called['page'] = page
+        called['size'] = size
         return orig_paging(self, page=page, size=size)
 
     async def stub_execute(self: Repo, *_: Any, **__: Any) -> list[Any]:
         return []
 
-    monkeypatch.setattr(ListQuery, "paging", wrapped_paging)
-    monkeypatch.setattr(Repo, "execute", stub_execute, raising=True)
+    monkeypatch.setattr(ListQuery, 'paging', wrapped_paging)
+    monkeypatch.setattr(Repo, 'execute', stub_execute, raising=True)
 
     # 2
     repo = Repo(cast(AsyncSession, FakeAsyncSession(script=[FakeResult([])])))
@@ -1192,10 +1116,9 @@ async def test_get_list_offset_paging_path_calls_paging_when_page_and_size_are_p
 
     # 4
     assert out == []
-    assert called["paging"] == 1
-    assert called["page"] == 2
-    assert called["size"] == 10
-
+    assert called['paging'] == 1
+    assert called['page'] == 2
+    assert called['size'] == 10
 
 
 def test_validate_schema_against_model_raises_type_error_when_required_fields_are_missing() -> None:
@@ -1206,19 +1129,16 @@ def test_validate_schema_against_model_raises_type_error_when_required_fields_ar
     3. Instantiate Repo(mapping_schema=BadSchema) to trigger validation in __init__.
     4. Assert TypeError message includes strict prefix, missing field, and model name.
     """
+
     # 1
     class Base2(DeclarativeBase):
         pass
 
-
-
     class Model(Base2):
-        __tablename__ = "model_for_schema_missing_required"
+        __tablename__ = 'model_for_schema_missing_required'
 
         pk: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
         name: Mapped[str | None] = mapped_column(nullable=True)
-
-
 
     # 2
     class BadSchema(BaseModel):
@@ -1227,13 +1147,9 @@ def test_validate_schema_against_model_raises_type_error_when_required_fields_ar
         missing_field: int
         name: str | None = None
 
-
-
     @dataclass
     class DummyFilter2(BaseRepoFilter):
         pk: int | None = None
-
-
 
     class Repo(BaseRepository[Model, BadSchema]):
         filter_class = DummyFilter2
@@ -1244,10 +1160,9 @@ def test_validate_schema_against_model_raises_type_error_when_required_fields_ar
     # 4
     with pytest.raises(
         TypeError,
-        match=r"\[Strict\].*missing=.*missing_field.*model=Model",
+        match=r'\[Strict\].*missing=.*missing_field.*model=Model',
     ):
         _ = Repo(s)
-
 
 
 def test_init_subclass_skips_bases_without_generic_args() -> None:
@@ -1257,6 +1172,7 @@ def test_init_subclass_skips_bases_without_generic_args() -> None:
     2. Define a Repo subclass that inherits from BaseRepository[...] and the plain base.
     3. Assert that model and mapping_schema are still inferred from the generic base.
     """
+
     # 1
     class PlainBase:
         pass
@@ -1266,5 +1182,5 @@ def test_init_subclass_skips_bases_without_generic_args() -> None:
         filter_class = RFilter
 
     # 3
-    assert getattr(RepoWithPlainBase, "model") is Result
-    assert getattr(RepoWithPlainBase, "mapping_schema") is ResultStrictSchema
+    assert RepoWithPlainBase.model is Result
+    assert RepoWithPlainBase.mapping_schema is ResultStrictSchema

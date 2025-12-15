@@ -1,10 +1,10 @@
 from __future__ import annotations
+
 from typing import Any, cast
 
 import pytest
 
 from base_repository.base_mapper import BaseMapper
-
 
 
 def test_cannot_instantiate_abstract_mapper() -> None:
@@ -14,6 +14,7 @@ def test_cannot_instantiate_abstract_mapper() -> None:
     2. Attempt to instantiate it.
     3. Assert TypeError is raised.
     """
+
     # 1
     class IncompleteMapper(BaseMapper):
         pass
@@ -24,7 +25,6 @@ def test_cannot_instantiate_abstract_mapper() -> None:
         _ = IncompleteMapper()  # type: ignore[abstract]
 
 
-
 def test_can_instantiate_concrete_mapper_and_methods_work() -> None:
     """
     < Concrete mapper implementing both methods must be instantiable and functional >
@@ -32,6 +32,7 @@ def test_can_instantiate_concrete_mapper_and_methods_work() -> None:
     2. Instantiate it.
     3. Assert both methods return expected values.
     """
+
     # 1
     class ConcreteMapper(BaseMapper):
         def to_schema(self, orm_object: int) -> int:
@@ -48,7 +49,6 @@ def test_can_instantiate_concrete_mapper_and_methods_work() -> None:
     assert m.to_orm(11) == 10
 
 
-
 def test_calling_super_hits_base_notimplemented_lines() -> None:
     """
     < Calling super() in overridden methods hits BaseMapper NotImplementedError lines >
@@ -56,6 +56,7 @@ def test_calling_super_hits_base_notimplemented_lines() -> None:
     2. Instantiate it.
     3. Call to_schema and to_orm and assert NotImplementedError is raised.
     """
+
     # 1
     class SuperCallingMapper(BaseMapper):
         def to_schema(self, orm_object: int) -> int:

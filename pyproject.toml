@@ -83,14 +83,14 @@ select = [
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
 ]
-ignore = ["E501"]
+ignore = ["E501", "F405", "F403"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.isort]
 known-first-party = ["base_repository"]
-known-third-party = ["pydantic, sqlalchemy"]
+known-third-party = ["pydantic", "sqlalchemy"]
 
 [tool.ruff.format]
 quote-style = 'single'
@@ -100,12 +100,12 @@ plugins = ["pydantic.mypy"]
 strict = true
 
 [[tool.mypy.overrides]]
-module = "base-repository.tests"
+module = "base-repository.tests.*"
 ignore_missing_imports = true
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = "base-repository.docs"
+module = "base-repository.docs.*"
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false

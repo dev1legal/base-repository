@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import json
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-import json
 from pathlib import Path
-import re
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -23,64 +23,64 @@ class Record:
     key_label: str | None
     metrics: Any
     seed_data_rows: int | None
-    
+
 
 def _parse_ts(ts_utc: str) -> datetime:
     # 1) Parse timestamps like "2025-11-26T..." (UTC offset may be included)
-    return datetime.fromisoformat(ts_utc.replace("Z", "+00:00"))
+    return datetime.fromisoformat(ts_utc.replace('Z', '+00:00'))
 
 
 def _scenario_family_and_variant(scenario: str) -> tuple[str, str]:
     # 1) Treat the leading "[..][..]" chunks as the family
     # 2) Treat the remaining text as the variant
-    m = re.match(r"^(\[[^\]]+\](?:\[[^\]]+\])*)\s*(.*)$", scenario)
+    m = re.match(r'^(\[[^\]]+\](?:\[[^\]]+\])*)\s*(.*)$', scenario)
     if m:
         fam = m.group(1).strip()
         var = m.group(2).strip()
         if not var:
-            return fam, "(default)"
+            return fam, '(default)'
         return fam, var
 
     # Handle CPU cases where something like "_sa" is appended right after "[...]"
-    m2 = re.match(r"^(\[[^\]]+\])(.*)$", scenario)
+    m2 = re.match(r'^(\[[^\]]+\])(.*)$', scenario)
     if m2:
         fam = m2.group(1).strip()
         var = m2.group(2).strip()
-        var = var.lstrip("_- ").strip()
-        return fam, (var or "(default)")
+        var = var.lstrip('_- ').strip()
+        return fam, (var or '(default)')
 
-    return scenario, "(default)"
+    return scenario, '(default)'
 
 
 def _safe(name: str) -> str:
-    s = re.sub(r"[^a-zA-Z0-9._-]+", "_", name.strip())
-    s = s.lstrip("_.")
+    s = re.sub(r'[^a-zA-Z0-9._-]+', '_', name.strip())
+    s = s.lstrip('_.')
     if not s:
-        s = "scenario"
+        s = 'scenario'
     return s[:180] if len(s) > 180 else s
 
 
 def _load_all(results_dir: Path) -> list[Record]:
     records: list[Record] = []
-    for path in results_dir.rglob("*.jsonl"):
-        with path.open("r", encoding="utf-8") as f:
+    for path in results_dir.rglob('*.jsonl'):
+        with path.open('r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 obj = json.loads(line)
-                meta = obj["meta"]
+                meta = obj['meta']
                 records.append(
                     Record(
-                        run_id=meta["run_id"],
-                        ts_utc=meta["ts_utc"],
-                        suite=meta["suite"],
-                        source=meta["source"],
-                        type=obj["type"],
-                        scenario=obj["scenario"],
-                        key_label=obj.get("key_label"),
-                        metrics=obj["metrics"],
-                        seed_data_rows=meta.get("seed_data_rows_cnt"),
+                        run_id=meta['run_id'],
+                        ts_utc=meta['ts_utc'],
+                        suite=meta['suite'],
+                        source=meta['source'],
+                        type=obj['type'],
+                        scenario=obj['scenario'],
+                        key_label=obj.get('key_label'),
+                        metrics=obj['metrics'],
+                        seed_data_rows=meta.get('seed_data_rows_cnt'),
                     )
                 )
     return records
@@ -107,22 +107,22 @@ def _plot_table_group(
         xs_all.update(points.keys())
     xs = sorted(xs_all)
 
-    for metric in ["avg", "p95", "p99"]:
+    for metric in ['avg', 'p95', 'p99']:
         plt.figure()
         for variant, points in series.items():
             ys = []
             for x in xs:
-                ys.append(points[x][metric] if x in points else float("nan"))
-            plt.plot(xs, ys, marker="o", label=variant)
+                ys.append(points[x][metric] if x in points else float('nan'))
+            plt.plot(xs, ys, marker='o', label=variant)
 
-        plt.title(f"{title} ({metric})")
+        plt.title(f'{title} ({metric})')
         plt.xlabel(key_label)
-        plt.ylabel("ms")
+        plt.ylabel('ms')
         plt.legend()
 
         out_dir.mkdir(parents=True, exist_ok=True)
-        png = out_dir / f"{_safe(metric)}.png"
-        plt.savefig(png, dpi=160, bbox_inches="tight")
+        png = out_dir / f'{_safe(metric)}.png'
+        plt.savefig(png, dpi=160, bbox_inches='tight')
         plt.close()
 
         paths.append(png.relative_to(report_root).as_posix())
@@ -140,18 +140,18 @@ def _plot_one_group(
     paths: list[str] = []
     variants = list(series.keys())
 
-    for metric in ["avg", "p95", "p99"]:
+    for metric in ['avg', 'p95', 'p99']:
         plt.figure()
         ys = [series[v][metric] for v in variants]
         xs = list(range(len(variants)))
         plt.bar(xs, ys)
-        plt.xticks(xs, variants, rotation=30, ha="right")
-        plt.title(f"{title} ({metric})")
-        plt.ylabel("ms")
+        plt.xticks(xs, variants, rotation=30, ha='right')
+        plt.title(f'{title} ({metric})')
+        plt.ylabel('ms')
 
         out_dir.mkdir(parents=True, exist_ok=True)
-        png = out_dir / f"{_safe(metric)}.png"
-        plt.savefig(png, dpi=160, bbox_inches="tight")
+        png = out_dir / f'{_safe(metric)}.png'
+        plt.savefig(png, dpi=160, bbox_inches='tight')
         plt.close()
 
         paths.append(png.relative_to(report_root).as_posix())
@@ -159,12 +159,11 @@ def _plot_one_group(
     return paths
 
 
-
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results-dir", type=str, default="tests/perf/results")
-    parser.add_argument("--out-dir", type=str, default="tests/perf/report")
-    parser.add_argument("--run-id", type=str, default="")
+    parser.add_argument('--results-dir', type=str, default='tests/perf/results')
+    parser.add_argument('--out-dir', type=str, default='tests/perf/report')
+    parser.add_argument('--run-id', type=str, default='')
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)
@@ -172,7 +171,7 @@ def main() -> None:
 
     records = _load_all(results_dir)
     if not records:
-        raise SystemExit(f"no records under: {results_dir}")
+        raise SystemExit(f'no records under: {results_dir}')
 
     run_id = args.run_id or _pick_latest_run(records)
     picked = [r for r in records if r.run_id == run_id]
@@ -184,21 +183,21 @@ def main() -> None:
     for r in picked:
         family, variant = _scenario_family_and_variant(r.scenario)
 
-        if r.type == "table":
-            key_label = r.key_label or "X"
+        if r.type == 'table':
+            key_label = r.key_label or 'X'
             metrics_raw: dict[str, dict[str, float]] = r.metrics
             metrics: dict[int, dict[str, float]] = {int(k): v for k, v in metrics_raw.items()}
             table_groups[(r.suite, family, r.type, key_label)][variant] = metrics
 
-        elif r.type == "one":
+        elif r.type == 'one':
             one_groups[(r.suite, family, r.type)][variant] = r.metrics
 
     # 2) Generate images + write index.html
     out_dir.mkdir(parents=True, exist_ok=True)
 
     sections: list[str] = []
-    sections.append(f"<h1>Performance Report</h1>")
-    sections.append(f"<h2>run_id: {run_id}</h2>")
+    sections.append('<h1>Performance Report</h1>')
+    sections.append(f'<h2>run_id: {run_id}</h2>')
 
     seed_data_rows = None
     for r in picked:
@@ -206,60 +205,55 @@ def main() -> None:
             seed_data_rows = r.seed_data_rows
             break
     if seed_data_rows is not None:
-        sections.append(f"<h2>seed_data_rows: {seed_data_rows}</h2>")
+        sections.append(f'<h2>seed_data_rows: {seed_data_rows}</h2>')
 
     # Table groups
     for (suite, family, _type, key_label), series in sorted(table_groups.items()):
-        base = out_dir / suite / _safe(family) / "table"
+        base = out_dir / suite / _safe(family) / 'table'
         rels = _plot_table_group(
             report_root=out_dir,
             out_dir=base,
-            title=f"{suite} {family}",
+            title=f'{suite} {family}',
             key_label=key_label,
             series=series,
         )
-        sections.append(f"<h2>{family}</h2>")
+        sections.append(f'<h2>{family}</h2>')
         img_html = []
         for rel in rels:
             img_html.append(f"<div class='card'><img src='{rel}'></div>")
-        sections.append("<div class='grid2'>" + "\n".join(img_html) + "</div>")
-
+        sections.append("<div class='grid2'>" + '\n'.join(img_html) + '</div>')
 
     # One groups
     for (suite, family, _type, key_label), table_series in sorted(table_groups.items()):
-        base = out_dir / suite / _safe(family) / "table"
+        base = out_dir / suite / _safe(family) / 'table'
         rels = _plot_table_group(
             report_root=out_dir,
             out_dir=base,
-            title=f"{suite} {family}",
+            title=f'{suite} {family}',
             key_label=key_label,
             series=table_series,
         )
-        sections.append(f"<h2>{family}</h2>")
+        sections.append(f'<h2>{family}</h2>')
         img_html = []
         for rel in rels:
             img_html.append(f"<div class='card'><img src='{rel}'></div>")
-        sections.append("<div class='grid2'>" + "\n".join(img_html) + "</div>")
+        sections.append("<div class='grid2'>" + '\n'.join(img_html) + '</div>')
 
-
-    index = out_dir / "index.html"
+    index = out_dir / 'index.html'
     index.write_text(
         "<html><head><meta charset='utf-8'><title>Perf Report</title>"
-        "<style>"
-        "body{margin:0 auto;padding:16px;font-family:system-ui,-apple-system,sans-serif;}"
-        ".grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start;}"
-        ".card{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff;}"
-        ".card img{width:100%;height:auto;display:block;}"
-        "</style>"
-        "</head><body>"
-        + "\n".join(sections)
-        + "</body></html>",
-        encoding="utf-8",   
+        '<style>'
+        'body{margin:0 auto;padding:16px;font-family:system-ui,-apple-system,sans-serif;}'
+        '.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start;}'
+        '.card{border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff;}'
+        '.card img{width:100%;height:auto;display:block;}'
+        '</style>'
+        '</head><body>' + '\n'.join(sections) + '</body></html>',
+        encoding='utf-8',
     )
 
+    print(f'[perf-view] wrote: {index}')
 
-    print(f"[perf-view] wrote: {index}")
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

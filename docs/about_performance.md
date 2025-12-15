@@ -1,6 +1,6 @@
 <div align="right">
   <a href="https://4jades.github.io/base-repository/about_performance.md">English</a> | <a href="https://4jades.github.io/base-repository/about_performance.ko.md">한국어</a>
-</div>    
+</div>
 
 ## Performance Test
 
@@ -9,21 +9,21 @@ BaseRepository is a library that wraps SQLAlchemy, so the performance validation
 1. How small the wrapping overhead is (CPU-bound)
 2. How it performs compared to other code that serves the same purpose (including DB-bound)
    - 2-1. Compared to SQLAlchemy best-practice query and usage patterns
-   - 2-2. Compared to other wrapper libraries (SQLModel)  
+   - 2-2. Compared to other wrapper libraries (SQLModel)
      Note: SQLModel comparisons are limited to the feature set SQLModel directly provides.
 
 ---
 
 ### Performance Test Environment
 
-- python = 3.11  
-- pydantic = 2.12.0  
-- sqlalchemy = 2.0.44  
-- DB = mysql:8.0, PostgreSQL 16, SQLite 3.45  
+- python = 3.11
+- pydantic = 2.12.0
+- sqlalchemy = 2.0.44
+- DB = mysql:8.0, PostgreSQL 16, SQLite 3.45
 - Platform = macOS-15.6-arm64-arm-64bit
 
 ### NOTE
-> This performance test was executed only for a subset of representative cases.  
+> This performance test was executed only for a subset of representative cases.
 > Therefore, the results serve as comparative indicators under specific environments and conditions and do not guarantee general performance across all features or production environments.
 
 ---
@@ -56,7 +56,7 @@ Notes
 
 ---
 
-### 1.3 Converting: ORM → schema conversion performance  
+### 1.3 Converting: ORM → schema conversion performance
 [→ Jump to results](#attached-cpu-results)
 
 Baselines
@@ -399,27 +399,27 @@ They are generated locally during benchmark execution.
 ### 3.2 Attached Results
 
 
-#### <a id="attached-cpu-results"></a>CPU BOUND    
+#### <a id="attached-cpu-results"></a>CPU BOUND
 
 
-- run_id: `20251127T050031Z`, iter: `50`, unit: `ms`  
+- run_id: `20251127T050031Z`, iter: `50`, unit: `ms`
   → <a href="./perf_results/run_20251127T050031Z/" target="_blank" rel="noreferrer">
        View full HTML report
     </a>
 
-#### <a id="attached-db-results"></a>USE DB    
+#### <a id="attached-db-results"></a>USE DB
 
-- **MySQL** — run_id: `20251126T065306Z`, iter: `100`, unit: `ms`, seed: `10000000`  
+- **MySQL** — run_id: `20251126T065306Z`, iter: `100`, unit: `ms`, seed: `10000000`
   → <a href="./perf_results/run_20251126T065306Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>
 
-- **PostgreSQL** — run_id: `20251205T025441Z`, iter: `100`, unit: `ms`, seed: `100000`  
+- **PostgreSQL** — run_id: `20251205T025441Z`, iter: `100`, unit: `ms`, seed: `100000`
   → <a href="./perf_results/run_20251205T025441Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>
 
-- **SQLite** — run_id: `20251205T030413Z`, iter: `100`, unit: `ms`, seed: `100000`  
+- **SQLite** — run_id: `20251205T030413Z`, iter: `100`, unit: `ms`, seed: `100000`
   → <a href="./perf_results/run_20251205T030413Z/" target="_blank" rel="noreferrer">
        View full HTML report
      </a>

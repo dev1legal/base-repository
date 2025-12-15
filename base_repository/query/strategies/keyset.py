@@ -48,9 +48,9 @@ class KeysetStrategy:
            - DESC present -> OR-ladder (seek) condition
         """
         if not order_cols:
-            raise ValueError("keyset pagination requires order_cols.")
+            raise ValueError('keyset pagination requires order_cols.')
         if size < 1:
-            raise ValueError("size must be >= 1.")
+            raise ValueError('size must be >= 1.')
 
         if cursor is None or len(cursor) == 0:
             return stmt.limit(size)
@@ -59,23 +59,23 @@ class KeysetStrategy:
         cursor_keys = list(cursor.keys())
 
         if set(cursor_keys) != set(col_keys):
-            raise ValueError(f"cursor keys mismatch. required={col_keys}, got={cursor_keys}")
+            raise ValueError(f'cursor keys mismatch. required={col_keys}, got={cursor_keys}')
 
         if cursor_keys != col_keys:
-            raise ValueError(f"cursor key order must match order_cols. required={col_keys}, got={cursor_keys}")
+            raise ValueError(f'cursor key order must match order_cols. required={col_keys}, got={cursor_keys}')
 
         values: list[Any] = []
         stripped = KeysetStrategy._strip_unary(order_cols)
         if len(stripped) != len(col_keys):
-            raise ValueError("order_cols length does not match extracted key length.")
+            raise ValueError('order_cols length does not match extracted key length.')
 
         for i, key in enumerate(col_keys):
             v = cursor[key]
             if v is None:
-                raise ValueError(f"NULL is not allowed in cursor values. key={key}")
+                raise ValueError(f'NULL is not allowed in cursor values. key={key}')
 
             # Validate/cast using column python_type if available
-            expected_py = getattr(getattr(stripped[i], "type", None), "python_type", None)
+            expected_py = getattr(getattr(stripped[i], 'type', None), 'python_type', None)
             if expected_py is not None and not isinstance(v, expected_py):
                 try:
                     v = expected_py(v)
@@ -109,7 +109,6 @@ class KeysetStrategy:
         seek = or_(*or_conds)
         return stmt.where(seek).limit(size)
 
-
     @staticmethod
     def _col_key(col: ClauseElement) -> str:
         """
@@ -120,8 +119,7 @@ class KeysetStrategy:
         """
         if isinstance(col, UnaryExpression):
             col = col.element
-        return getattr(col, "key", getattr(col, "name", repr(col)))
-
+        return getattr(col, 'key', getattr(col, 'name', repr(col)))
 
     @staticmethod
     def _strip_unary(cols: Sequence[ColumnElement[Any]]) -> list[ColumnElement[Any]]:

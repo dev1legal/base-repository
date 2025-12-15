@@ -17,11 +17,9 @@ from base_repository.session_provider import SessionProvider
 
 
 class PerfDBKind(StrEnum):
-    MYSQL = "mysql"
-    POSTGRES = "postgres"
-    SQLITE = "sqlite"
-
-
+    MYSQL = 'mysql'
+    POSTGRES = 'postgres'
+    SQLITE = 'sqlite'
 
 
 @dataclass(frozen=True)
@@ -31,19 +29,19 @@ class PerfDBSettings:
     echo: bool = False
 
     @staticmethod
-    def from_env() -> "PerfDBSettings":
+    def from_env() -> PerfDBSettings:
         """
         < 환경 변수로 perf DB 설정을 로드합니다 >
         1. PERF_DB_KIND 를 읽습니다. 기본값은 mysql 입니다.
         2. PERF_DB_DSN 이 있으면 그대로 사용합니다.
         3. 없으면 kind에 따라 기본 DSN을 생성합니다.
         """
-        kind_raw = (os.getenv("PERF_DB_KIND") or "mysql").strip().lower()
+        kind_raw = (os.getenv('PERF_DB_KIND') or 'mysql').strip().lower()
         kind = PerfDBKind(kind_raw)
 
-        echo = (os.getenv("PERF_DB_ECHO") or "").strip().lower() in {"1", "true", "yes", "y"}
+        echo = (os.getenv('PERF_DB_ECHO') or '').strip().lower() in {'1', 'true', 'yes', 'y'}
 
-        dsn_override = (os.getenv("PERF_DB_DSN") or "").strip()
+        dsn_override = (os.getenv('PERF_DB_DSN') or '').strip()
         if dsn_override:
             return PerfDBSettings(kind=kind, dsn=dsn_override, echo=echo)
 
@@ -53,15 +51,13 @@ class PerfDBSettings:
         if kind == PerfDBKind.POSTGRES:
             return PerfDBSettings(kind=kind, dsn=DEFAULT_POSTGRES_DSN, echo=echo)
 
-        sqlite_path = (os.getenv("PERF_SQLITE_PATH") or DEFAULT_SQLITE_PATH).strip()
-        return PerfDBSettings(kind=kind, dsn=f"sqlite+aiosqlite:///{sqlite_path}", echo=echo)
+        sqlite_path = (os.getenv('PERF_SQLITE_PATH') or DEFAULT_SQLITE_PATH).strip()
+        return PerfDBSettings(kind=kind, dsn=f'sqlite+aiosqlite:///{sqlite_path}', echo=echo)
 
 
-
-
-DEFAULT_MYSQL_DSN: Final[str] = "mysql+aiomysql://perf_user:perf_pass@127.0.0.1:3307/perf_db"
-DEFAULT_POSTGRES_DSN: Final[str] = "postgresql+asyncpg://perf_user:perf_pass@127.0.0.1:5433/perf_db"
-DEFAULT_SQLITE_PATH: Final[str] = "tests/perf/sqlite/perf.db"
+DEFAULT_MYSQL_DSN: Final[str] = 'mysql+aiomysql://perf_user:perf_pass@127.0.0.1:3307/perf_db'
+DEFAULT_POSTGRES_DSN: Final[str] = 'postgresql+asyncpg://perf_user:perf_pass@127.0.0.1:5433/perf_db'
+DEFAULT_SQLITE_PATH: Final[str] = 'tests/perf/sqlite/perf.db'
 
 
 _current_settings: PerfDBSettings | None = None
@@ -72,8 +68,6 @@ _perf_session_maker: async_sessionmaker[AsyncSession] | None = None
 _cached_provider: SessionProvider | None = None
 
 
-
-
 class DefaultSessionProvider(SessionProvider):
     def __init__(self, session_maker: async_sessionmaker[AsyncSession]):
         self._session_maker = session_maker
@@ -82,18 +76,15 @@ class DefaultSessionProvider(SessionProvider):
         return self._session_maker()
 
 
-
-
 class PerfSessionProviderProxy(SessionProvider):
     """
     < 기존 코드 호환을 위한 Proxy Provider 입니다 >
     1. 테스트 코드가 perf_session_provider 변수를 직접 import 하더라도 None 이 되지 않습니다.
     2. 실제 Provider 는 get_perf_session_provider() 호출 시점에 lazy 로 생성됩니다.
     """
+
     def get_session(self) -> AsyncSession:
         return get_perf_session_provider().get_session()
-
-
 
 
 def _build_connect_args(settings: PerfDBSettings) -> dict:
@@ -107,16 +98,14 @@ def _build_connect_args(settings: PerfDBSettings) -> dict:
         from pymysql.constants import CLIENT  # type: ignore[import-untyped]
 
         return {
-            "client_flag": CLIENT.MULTI_STATEMENTS | CLIENT.LOCAL_FILES,
-            "local_infile": True,
+            'client_flag': CLIENT.MULTI_STATEMENTS | CLIENT.LOCAL_FILES,
+            'local_infile': True,
         }
 
     if settings.kind == PerfDBKind.SQLITE:
-        return {"check_same_thread": False}
+        return {'check_same_thread': False}
 
     return {}
-
-
 
 
 def create_perf_engine(settings: PerfDBSettings) -> AsyncEngine:
@@ -137,8 +126,6 @@ def create_perf_engine(settings: PerfDBSettings) -> AsyncEngine:
     )
 
 
-
-
 def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     """
     < perf DB용 AsyncSession 팩토리를 생성합니다 >
@@ -149,8 +136,6 @@ def create_session_maker(engine: AsyncEngine) -> async_sessionmaker[AsyncSession
         bind=engine,
         expire_on_commit=False,
     )
-
-
 
 
 def configure_perf_db(*, kind: str | None = None, dsn: str | None = None, echo: bool | None = None) -> None:
@@ -175,16 +160,14 @@ def configure_perf_db(*, kind: str | None = None, dsn: str | None = None, echo: 
         elif new_kind == PerfDBKind.POSTGRES:
             new_dsn = DEFAULT_POSTGRES_DSN
         else:
-            sqlite_path = (os.getenv("PERF_SQLITE_PATH") or DEFAULT_SQLITE_PATH).strip()
-            new_dsn = f"sqlite+aiosqlite:///{sqlite_path}"
+            sqlite_path = (os.getenv('PERF_SQLITE_PATH') or DEFAULT_SQLITE_PATH).strip()
+            new_dsn = f'sqlite+aiosqlite:///{sqlite_path}'
 
     _current_settings = PerfDBSettings(kind=new_kind, dsn=new_dsn, echo=new_echo)
 
     _perf_engine = None
     _perf_session_maker = None
     _cached_provider = None
-
-
 
 
 def get_perf_settings() -> PerfDBSettings:
@@ -198,8 +181,6 @@ def get_perf_settings() -> PerfDBSettings:
     return _current_settings
 
 
-
-
 def get_perf_engine() -> AsyncEngine:
     """
     < perf DB 전용 AsyncEngine 을 반환합니다 >
@@ -211,8 +192,6 @@ def get_perf_engine() -> AsyncEngine:
         settings = get_perf_settings()
         _perf_engine = create_perf_engine(settings)
     return _perf_engine
-
-
 
 
 def get_perf_session_provider() -> SessionProvider:
@@ -237,12 +216,8 @@ def get_perf_session_provider() -> SessionProvider:
     return _cached_provider
 
 
-
-
 # 외부에서 import 해도 None 이 되지 않도록 Proxy 객체를 노출합니다.
 perf_session_provider: SessionProvider = PerfSessionProviderProxy()
-
-
 
 
 async def dispose_perf_engine() -> None:

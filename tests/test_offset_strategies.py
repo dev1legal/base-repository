@@ -7,13 +7,12 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from base_repository.query.strategies.offset import OffsetStrategy
 
 
-
 class Base(DeclarativeBase):
     pass
 
 
 class M(Base):
-    __tablename__ = "m_offset_strategy"
+    __tablename__ = 'm_offset_strategy'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
@@ -26,7 +25,7 @@ def test_offset_strategy_apply_raises_when_page_is_less_than_one() -> None:
     3. Assert ValueError with the expected message.
     """
     stmt = select(M)
-    with pytest.raises(ValueError, match=r"page must be >= 1\."):
+    with pytest.raises(ValueError, match=r'page must be >= 1\.'):
         _ = OffsetStrategy.apply(stmt, page=0, size=10)
 
 
@@ -38,7 +37,7 @@ def test_offset_strategy_apply_raises_when_size_is_less_than_one() -> None:
     3. Assert ValueError with the expected message.
     """
     stmt = select(M)
-    with pytest.raises(ValueError, match=r"size must be >= 1\."):
+    with pytest.raises(ValueError, match=r'size must be >= 1\.'):
         _ = OffsetStrategy.apply(stmt, page=1, size=0)
 
 
@@ -53,7 +52,7 @@ def test_offset_strategy_apply_sets_offset_and_limit_correctly() -> None:
     stmt = select(M)
     out = OffsetStrategy.apply(stmt, page=3, size=10)
 
-    sql = str(out.compile(compile_kwargs={"literal_binds": True})).upper()
+    sql = str(out.compile(compile_kwargs={'literal_binds': True})).upper()
 
-    assert "OFFSET 20" in sql
-    assert "LIMIT 10" in sql
+    assert 'OFFSET 20' in sql
+    assert 'LIMIT 10' in sql

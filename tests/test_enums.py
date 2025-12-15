@@ -5,7 +5,7 @@ from base_repository.enums import StatementType
 
 
 def _t():
-    return table("t", column("id"), column("name"))
+    return table('t', column('id'), column('name'))
 
 
 def test_from_stmt_select() -> None:
@@ -19,7 +19,7 @@ def test_from_stmt_insert() -> None:
 
 
 def test_from_stmt_update() -> None:
-    stmt = update(_t()).where(_t().c.id == 1).values(name="x")
+    stmt = update(_t()).where(_t().c.id == 1).values(name='x')
     assert StatementType.from_stmt(stmt) == StatementType.UPDATE
 
 
@@ -34,8 +34,8 @@ def test_from_stmt_unsupported() -> None:
 
 
 def test_strenum_is_str_like() -> None:
-    assert StatementType.SELECT == "select"
-    assert str(StatementType.SELECT) == "select"
-    assert StatementType.SELECT.value == "select"
-    assert StatementType.SELECT.name == "SELECT"
+    assert StatementType.SELECT == 'select'
+    assert str(StatementType.SELECT) == 'select'
+    assert StatementType.SELECT.value == 'select'
+    assert StatementType.SELECT.name == 'SELECT'
     assert isinstance(StatementType.SELECT, str)

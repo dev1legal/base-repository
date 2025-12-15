@@ -17,7 +17,7 @@ class Base(DeclarativeBase):
 
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
@@ -44,7 +44,7 @@ def has_limit(sql: str) -> bool:
     2. Return True if a match exists.
     """
     # 1
-    m = re.search(r"LIMIT\b", sql, re.IGNORECASE)
+    m = re.search(r'LIMIT\b', sql, re.IGNORECASE)
 
     # 2
     return bool(m)
@@ -57,7 +57,7 @@ def has_where(sql: str) -> bool:
     2. Return True if a match exists.
     """
     # 1
-    m = re.search(r"\bWHERE\b", sql, re.IGNORECASE)
+    m = re.search(r'\bWHERE\b', sql, re.IGNORECASE)
 
     # 2
     return bool(m)
@@ -71,7 +71,7 @@ def has_tuple_gt(sql: str) -> bool:
     2. Return True if such a pattern exists.
     """
     # 1
-    pattern = r"\(\s*[^)]+?,\s*[^)]+?\)\s*>\s*\(\s*[^)]+?\)"
+    pattern = r'\(\s*[^)]+?,\s*[^)]+?\)\s*>\s*\(\s*[^)]+?\)'
     m = re.search(pattern, sql, re.IGNORECASE | re.DOTALL)
 
     # 2
@@ -90,7 +90,7 @@ def test_raise_when_no_order_cols() -> None:
 
     # 2
     # 3
-    with pytest.raises(ValueError, match="order_cols"):
+    with pytest.raises(ValueError, match='order_cols'):
         KeysetStrategy.apply(stmt, order_cols=[], cursor={}, size=10)
 
 
@@ -106,7 +106,7 @@ def test_raise_when_size_less_than_one() -> None:
 
     # 2
     # 3
-    with pytest.raises(ValueError, match="size"):
+    with pytest.raises(ValueError, match='size'):
         KeysetStrategy.apply(stmt, order_cols=[User.id], cursor={}, size=0)
 
 
@@ -142,13 +142,10 @@ def test_cursor_key_set_mismatch_raises_for_multi_column() -> None:
     """
     # 1
     stmt = select(User)
-    order_cols = [
-        cast(ColumnElement[Any], User.id),
-        cast(ColumnElement[Any], User.name)
-    ]
+    order_cols = [cast(ColumnElement[Any], User.id), cast(ColumnElement[Any], User.name)]
 
     # 2
-    cursor = {"id": 1, "wrong_key": "kim"}
+    cursor = {'id': 1, 'wrong_key': 'kim'}
 
     # 3
     with pytest.raises(ValueError):
@@ -167,7 +164,7 @@ def test_cursor_key_set_mismatch_raises_for_single_column() -> None:
     order_cols = [User.id]
 
     # 2
-    cursor = {"id": 1, "extra": 999}
+    cursor = {'id': 1, 'extra': 999}
 
     # 3
     with pytest.raises(ValueError):
@@ -183,13 +180,10 @@ def test_multi_columns_all_asc_uses_tuple_comparison() -> None:
     """
     # 1
     stmt = select(User)
-    order_cols = [
-        cast(ColumnElement[Any], User.id),
-        cast(ColumnElement[Any], User.name)
-    ]
+    order_cols = [cast(ColumnElement[Any], User.id), cast(ColumnElement[Any], User.name)]
 
     # 2
-    cursor = {"id": 1, "name": "kim"}
+    cursor = {'id': 1, 'name': 'kim'}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=7)
 
     # 3
@@ -210,13 +204,13 @@ def test_single_column_desc_generates_less_than_condition() -> None:
     order_cols = [User.id.desc()]
 
     # 2
-    cursor = {"id": 100}
+    cursor = {'id': 100}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=10)
 
     # 3
     sql = compile_sql(q)
     assert has_where(sql)
-    assert "<" in sql
+    assert '<' in sql
 
 
 def test_multiple_desc_and_asc_combination_generates_or_ladder_with_both_ops() -> None:
@@ -234,13 +228,13 @@ def test_multiple_desc_and_asc_combination_generates_or_ladder_with_both_ops() -
     ]
 
     # 2
-    cursor = {"id": 5, "name": "bob"}
+    cursor = {'id': 5, 'name': 'bob'}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=15)
 
     # 3
     sql = compile_sql(q)
-    assert " OR " in sql
-    assert "<" in sql and ">" in sql
+    assert ' OR ' in sql
+    assert '<' in sql and '>' in sql
     assert has_limit(sql)
 
 
@@ -259,14 +253,13 @@ def test_mixed_direction_with_three_columns_generates_multi_or_ladder() -> None:
         cast(ColumnElement[Any], User.age.desc()),
     ]
 
-
     # 2
-    cursor = {"id": 1, "name": "foo", "age": 10}
+    cursor = {'id': 1, 'name': 'foo', 'age': 10}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=30)
 
     # 3
     sql = compile_sql(q)
-    assert sql.count(" OR ") >= 2
+    assert sql.count(' OR ') >= 2
     assert has_limit(sql)
 
 
@@ -279,7 +272,7 @@ def test_limit_clause_always_appended() -> None:
     # 1
     stmt = select(User)
     order_cols = [User.id]
-    cursor = {"id": 123}
+    cursor = {'id': 123}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=2)
 
     # 2
@@ -300,14 +293,14 @@ def test_col_key_and_strip_unary_helpers() -> None:
 
     # 2
     key = KeysetStrategy._col_key(u)
-    assert key == "id"
+    assert key == 'id'
 
     # 3
     stripped = KeysetStrategy._strip_unary([u, User.name])
 
     # 4
-    assert stripped[0].key == "id"
-    assert stripped[1].key == "name"
+    assert stripped[0].key == 'id'
+    assert stripped[1].key == 'name'
 
 
 def test_cursor_key_order_enforced_raises_on_swapped_keys() -> None:
@@ -325,7 +318,7 @@ def test_cursor_key_order_enforced_raises_on_swapped_keys() -> None:
     ]
 
     # 2
-    cursor: dict[str, Any] = {"name": "kim", "id": 1}
+    cursor: dict[str, Any] = {'name': 'kim', 'id': 1}
 
     # 3
     with pytest.raises(ValueError):
@@ -344,7 +337,7 @@ def test_cursor_value_none_rejected() -> None:
     order_cols = [User.id]
 
     # 2
-    cursor = {"id": None}
+    cursor = {'id': None}
 
     # 3
     with pytest.raises(ValueError):
@@ -363,13 +356,13 @@ def test_cursor_integer_casting_ok_from_string_single_column() -> None:
     order_cols = [User.id]
 
     # 2
-    cursor = {"id": "123"}
+    cursor = {'id': '123'}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=5)
 
     # 3
     sql = compile_sql(q)
     assert not has_tuple_gt(sql)
-    assert ">" in sql and has_where(sql) and has_limit(sql)
+    assert '>' in sql and has_where(sql) and has_limit(sql)
 
 
 def test_cursor_integer_casting_fail_for_non_numeric_string() -> None:
@@ -384,7 +377,7 @@ def test_cursor_integer_casting_fail_for_non_numeric_string() -> None:
     order_cols = [User.id]
 
     # 2
-    cursor = {"id": "abc"}
+    cursor = {'id': 'abc'}
 
     # 3
     with pytest.raises(TypeError):
@@ -403,13 +396,13 @@ def test_type_casting_on_multiple_integer_columns_ok() -> None:
     order_cols = [User.id, User.age]
 
     # 2
-    cursor = {"id": "5", "age": "42"}
+    cursor = {'id': '5', 'age': '42'}
     q = KeysetStrategy.apply(stmt, order_cols=order_cols, cursor=cursor, size=9)
 
     # 3
     sql = compile_sql(q)
     assert has_tuple_gt(sql)
-    assert ">" in sql and has_where(sql) and has_limit(sql)
+    assert '>' in sql and has_where(sql) and has_limit(sql)
 
 
 def test_type_casting_fail_on_second_integer_column() -> None:
@@ -424,7 +417,7 @@ def test_type_casting_fail_on_second_integer_column() -> None:
     order_cols = [User.id, User.age]
 
     # 2
-    cursor = {"id": "10", "age": "x42"}
+    cursor = {'id': '10', 'age': 'x42'}
 
     # 3
     with pytest.raises(TypeError):
@@ -439,15 +432,14 @@ def test_strip_unary_length_mismatch_triggers_error() -> None:
     3. Assert ValueError is raised with the expected message.
     """
     # 1
-    order_cols: list[ColumnElement[Any]] = [column("a"), column("b")]
-    stmt: Select[Any] = select(column("a"))
-    cursor: dict[str, Any] = {"a": 1, "b": 2}
+    order_cols: list[ColumnElement[Any]] = [column('a'), column('b')]
+    stmt: Select[Any] = select(column('a'))
+    cursor: dict[str, Any] = {'a': 1, 'b': 2}
 
     # 2
-    with patch.object(KeysetStrategy, "_strip_unary", return_value=[column("a")]):
-
+    with patch.object(KeysetStrategy, '_strip_unary', return_value=[column('a')]):
         # 3
-        with pytest.raises(ValueError, match="order_cols length does not match extracted key length"):
+        with pytest.raises(ValueError, match='order_cols length does not match extracted key length'):
             KeysetStrategy.apply(
                 stmt,
                 order_cols=order_cols,

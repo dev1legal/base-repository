@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+from collections.abc import Set as ABCSet
 from dataclasses import fields, is_dataclass
 from typing import Annotated, Any
-from collections.abc import Sequence, Set as ABCSet
+
 from typing_extensions import Doc
 
 
@@ -62,7 +64,7 @@ class BaseRepoFilter:
     __aliases__: Annotated[
         dict[str, str],
         Doc(
-            "A mapping dict for field name → column name.\n"
+            'A mapping dict for field name → column name.\n'
             "Example: {'org': 'org_id'} maps the 'org' field to the model's 'org_id' column."
         ),
     ] = {}
@@ -70,17 +72,16 @@ class BaseRepoFilter:
     __strict__: Annotated[
         bool,
         Doc(
-            "Strict mapping mode flag.\n"
-            "- True  : raise ValueError if a field cannot be mapped to a model column.\n"
-            "- False : silently ignore unmapped fields."
+            'Strict mapping mode flag.\n'
+            '- True  : raise ValueError if a field cannot be mapped to a model column.\n'
+            '- False : silently ignore unmapped fields.'
         ),
     ] = False
 
-
     @staticmethod
     def _is_seq(
-        value: Annotated[Any, Doc("Value to check for sequence-ness (expects list/tuple/set/frozenset, etc.).")],
-    ) -> Annotated[bool, Doc("True if value is a supported sequence type, otherwise False.")]:
+        value: Annotated[Any, Doc('Value to check for sequence-ness (expects list/tuple/set/frozenset, etc.).')],
+    ) -> Annotated[bool, Doc('True if value is a supported sequence type, otherwise False.')]:
         """
         Check whether the value is a Sequence or Set-like object.
         Note: str/bytes/bytearray are excluded.
@@ -91,12 +92,11 @@ class BaseRepoFilter:
 
         return isinstance(value, (Sequence, ABCSet))
 
-
     @classmethod
     def _resolve_column_name(
         cls,
-        field_name: Annotated[str, Doc("Dataclass field name.")],
-    ) -> Annotated[str, Doc("Resolved column name to use for mapping.")]:
+        field_name: Annotated[str, Doc('Dataclass field name.')],
+    ) -> Annotated[str, Doc('Resolved column name to use for mapping.')]:
         """
         Resolve the actual model column name for a given field name.
 
@@ -110,11 +110,10 @@ class BaseRepoFilter:
 
         return field_name
 
-
     def where_criteria(
         self,
-        m: Annotated[type[Any], Doc("SQLAlchemy ORM model class.")],
-    ) -> Annotated[list[Any], Doc("A list of SQLAlchemy criteria for a WHERE clause.")]:
+        m: Annotated[type[Any], Doc('SQLAlchemy ORM model class.')],
+    ) -> Annotated[list[Any], Doc('A list of SQLAlchemy criteria for a WHERE clause.')]:
         """
         Build SQLAlchemy WHERE criteria based on dataclass field values.
 
@@ -150,7 +149,7 @@ class BaseRepoFilter:
             If __strict__ = True and the mapped column cannot be found on the model.
         """
         if not is_dataclass(self):
-            raise TypeError("BaseRepoFilter must be used with a dataclass.")
+            raise TypeError('BaseRepoFilter must be used with a dataclass.')
 
         crit: list[Any] = []
         for f in fields(self):
