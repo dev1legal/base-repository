@@ -35,6 +35,8 @@ dev = [
     "aiomysql>=0.3.2",
     "cryptography>=46.0.3",
     "matplotlib>=3.10.7",
+    "litestar>=2.0.0",
+    "httpx>=0.26.0",
     "basedpyright",
     "pre-commit>=4.4.0",
     "pymysql>=1.1.2",

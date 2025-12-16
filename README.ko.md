@@ -203,4 +203,53 @@ await repo.session.flush()
 ```
 
 
+### 4) Litestar 통합 (Optional)
+
+`litestar`를 사용하는 경우, `base_repository.litestar` 모듈을 통해 의존성 주입(DI)과 페이지네이션을 쉽게 연동할 수 있습니다.
+`docs/how_to_use.ko.md`에 기술된 모든 기능(CRUD, Filtering, ListQuery 등)은 Litestar 통합 환경에서도 **100% 호환**됩니다.
+
+**설치**
+
+```bash
+pip install litestar
+# base-repository는 이미 설치되어 있어야 합니다.
+```
+
+**사용 예시**
+
+```python
+from litestar import Litestar, get
+from litestar.di import Provide
+from litestar.params import Dependency
+from base_repository.litestar import (
+    provide_repo, 
+    OffsetPagination, 
+    provide_offset_pagination, 
+    apply_pagination
+)
+
+# 1. Repository 정의 (기존과 동일)
+class UserRepo(BaseRepository[UserModel, UserSchema]):
+    filter_class = UserFilter
+
+# 2. 핸들러 구현
+@get("/users", dependencies={"repo": Provide(provide_repo(UserRepo))})
+async def list_users(
+    repo: UserRepo,
+    # 쿼리 파라미터 -> Pagination 객체 자동 변환 (provide_offset_pagination 사용)
+    pagination: OffsetPagination = Dependency(provide_offset_pagination) 
+) -> list[UserSchema]:
+    
+    # 3. Pagination 적용
+    q = repo.list()
+    q = apply_pagination(q, pagination)
+    
+    return await repo.execute(q)
+```
+
+* `provide_repo(RepoClass)`: Litestar의 DI 시스템을 통해 `AsyncSession`을 주입받아 Repository 인스턴스를 생성합니다.
+* `provide_offset_pagination` / `provide_cursor_pagination`: `page`, `size` 등의 쿼리 파라미터를 파싱합니다.
+* `apply_pagination`: 파싱된 페이지네이션 정보를 쿼리에 적용합니다.
+
+
 ---
