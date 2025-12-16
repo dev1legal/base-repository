@@ -76,7 +76,7 @@ class PerfResult(PerfBase):
 
 # SQLModel 버전 (동일 테이블 이름)
 class PerfResultSQLModel(SQLModel, table=True):
-    __tablename__ = 'perf_result'
+    __tablename__ = 'perf_result'  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
 
@@ -310,14 +310,14 @@ def print_one(title: str, metrics: dict[str, float], iter: int) -> None:
     )
 
 
-def cleanup_inserted_rows(model):
+def cleanup_inserted_rows(model: Any) -> Callable[[Callable[..., Awaitable[float]]], Callable[..., Awaitable[float]]]:
     """
     CREATE 벤치마크 후에 새로 들어간 row들만 정리.
     """
 
-    def decorator(fn):
+    def decorator(fn: Callable[..., Awaitable[float]]) -> Callable[..., Awaitable[float]]:
         @wraps(fn)
-        async def wrapper(n: int):
+        async def wrapper(n: int) -> float:
             session: AsyncSession = perf_session_provider.get_session()
             before_max_id = await session.scalar(select(sa_func.max(model.id)))
             before_max_id = before_max_id or 0
@@ -343,7 +343,7 @@ def cleanup_inserted_rows(model):
     return decorator
 
 
-def with_read_session():
+def with_read_session() -> Callable[[Callable[..., Awaitable[float]]], Callable[..., Awaitable[float]]]:
     """
     읽기/UPDATE 벤치마크용 데코레이터.
     - wrapper가 직접 session을 생성
@@ -351,9 +351,9 @@ def with_read_session():
     - cleanup 없음
     """
 
-    def decorator(fn):
+    def decorator(fn: Callable[..., Awaitable[float]]) -> Callable[..., Awaitable[float]]:
         @wraps(fn)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> float:
             session: AsyncSession = perf_session_provider.get_session()  # type: ignore[annotation-unchecked]
 
             try:
@@ -368,7 +368,7 @@ def with_read_session():
     return decorator
 
 
-def delete_and_restore_row(model):
+def delete_and_restore_row(model: Any) -> Callable[[Callable[..., Awaitable[float]]], Callable[..., Awaitable[float]]]:
     """
     < DELETE 벤치 후 동일 row를 즉시 복구합니다 >
     1. target_id row를 먼저 SELECT로 읽어서 dict로 보관합니다.
@@ -377,9 +377,9 @@ def delete_and_restore_row(model):
     4. 커밋하고 세션을 닫습니다.
     """
 
-    def decorator(fn):
+    def decorator(fn: Callable[..., Awaitable[float]]) -> Callable[..., Awaitable[float]]:
         @wraps(fn)
-        async def wrapper(target_id: int):
+        async def wrapper(target_id: int) -> float:
             session: AsyncSession = perf_session_provider.get_session()
             try:
                 # 1) 삭제 대상 row 스냅샷 (id 제외)
@@ -401,7 +401,7 @@ def delete_and_restore_row(model):
     return decorator
 
 
-def make_row_values(i: int) -> dict[str, object]:
+def make_row_values(i: int) -> dict[str, Any]:
     """
     config.py의 PERF_RESULT_COLUMNS 정의만 보고 row dict를 만든다.
     """

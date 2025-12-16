@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Generator
 
 import pytest
 import pytest_asyncio
@@ -42,7 +43,7 @@ def perf_engine(pytestconfig) -> AsyncEngine:
 
 
 @pytest.fixture(scope='session')
-def event_loop(pytestconfig) -> asyncio.AbstractEventLoop:  # type: ignore
+def event_loop(pytestconfig) -> Generator[asyncio.AbstractEventLoop, None, None]:  # type: ignore
     if not _perf_db_enabled(pytestconfig):
         pytest.skip('perf_db 마커가 없으므로 event_loop 미사용')
     loop = asyncio.new_event_loop()

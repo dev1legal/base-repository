@@ -276,7 +276,7 @@ class BaseRepository(Generic[TModel, TSchema]):
         except NotImplementedError:
             pass
 
-        payload = self._schema_payload(data)
+        payload = self._schema_payload(cast(BaseModel | Mapping[str, Any], data))
         return self.model(**payload)
 
     def _convert(self, row: TModel, *, convert_schema: bool | None = None) -> TSchema | TModel:

@@ -1,0 +1,263 @@
+[project]
+name = "parakeet-asr-poc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "litestar-granian>=0.14.2",
+    "litestar[structlog]>=2.18.0",
+    # ASR dependencies
+    "nemo_toolkit[asr]>=2.0.0",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "omegaconf>=2.3.0",
+    "hydra-core>=1.3.0",
+    "soundfile>=0.12.0",
+    "librosa>=0.10.0",
+    "numpy>=1.24.0",
+    # CUDA acceleration
+    "cuda-python>=12.3.0",
+    # Audio preprocessing dependencies
+    "scipy>=1.11.0",
+    "noisereduce>=3.0.0",
+    # Whisper ASR dependencies
+    "faster-whisper>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    { include-group = "linting" },
+]
+
+linting =[
+    "basedpyright",
+    "pre-commit",
+    "ruff",
+    "slotscheck",
+    "types-click",
+    "types-passlib",
+    "types-pyyaml",
+    "asyncpg-stubs",
+]
+
+[tool.uv]
+default-groups = ["dev", "linting"]
+
+[project.scripts]
+parakeet-asr-poc = "app.__main__:run_cli"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "setuptools"]
+
+[tool.hatch.metadata]
+# direct dependency references, e.g `pip @ git+https://github.com/pypa/pip.git@master`
+allow-direct-references = true
+
+[tool.hatch.build]
+dev-mode-dirs = ["src", "."]
+ignore-vcs = true
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [".github", "docs"]
+include = ["src/*", "tests/*", "tools/*"]
+
+[tool.hatch.build.targets.wheel]
+# artifacts = ["app/domain/web/public/*"]
+packages = ["app"]
+
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["src", "src/app", "tests"]
+exclude = [
+    ".history",
+    "scripts",
+    "docs",
+    "src/app/db/migrations/versions",
+    "**/migrations/versions",
+]
+typeCheckingMode = "basic"
+# Type checking configuration
+pythonVersion = "3.12"
+pythonPlatform = "All"
+
+# Report settings
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportOptionalCall = false
+reportOptionalIterable = false
+reportOptionalContextManager = false
+reportOptionalOperand = false
+reportGeneralTypeIssues = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportMissingParameterType = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryComparison = false
+reportConstantRedefinition = false
+reportAttributeAccessIssue = false
+reportIncompatibleVariableOverride = false
+
+[tool.ruff]
+# Ruff 설정 파일
+line-length = 120
+target-version = "py313"
+cache-dir = "./.ruff_cache"
+src = ["src", "tests"]
+preview = true
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".history",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    '__pycache__',
+    "src/app/db/migrations/versions",
+]
+
+[tool.ruff.lint]
+# 무시할 규칙들
+ignore = ["ERA001", "E712", "E731", "E203"]
+
+# 적용할 규칙들
+select = [
+    "E4",      # pycodestyle errors (subset)
+    "E7",      # pycodestyle errors (subset)
+    "E9",      # pycodestyle errors (subset)
+    "F",       # pyflakes
+    "I",       # isort
+    "W505",    # doc line too long
+    "SIM101",  # duplicate isinstance call
+    "SIM114",  # combine if branches
+    "PGH004",  # use specific rule codes when ignoring type issues
+    "PLE1142", # too many format args for logging
+    "RUF100",  # unused noqa directive
+    "F404",    # future import not at top of file
+    "TCH",     # type checking
+    "UP007",   # use X | Y for type unions
+]
+
+# 모든 활성화된 규칙에 대해 자동 수정 허용
+fixable = ["ALL"]
+unfixable = []
+
+# 언더스코어로 시작하는 변수는 사용하지 않아도 허용
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+# 프로젝트 내부 패키지 정의
+known-first-party = ["app", "tests"]
+lines-between-types = 1
+order-by-type = true
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 파일별 무시할 규칙들
+"**/migrations/*.py" = ['E402']
+"*/migrations/*.py" = ['D104', 'D103', 'D205', 'D212']
+"__init__.py" = ['F401', 'D104']
+"docs/**/*.*" = ["S", "B", "DTZ", "A", "TC", "ERA", "D", "RET", "E731", "RUF012", "FA100", "ARG001"]
+"docs/conf.py" = ["FIX002", "ARG001", "INP001"]
+"src/app/db/migrations/versions/*.py" = ["ANN201", "INP001"]
+"tests/*.py" = ['D103', 'S101', 'D104']
+"tools/*.py" = ["INP001", "ERA001", "N999"]
+"tools/**/*.*" = ["D", "ARG", "EM", "TRY", "G", "FBT", "INP001"]
+# "__init__.py" = ["F401"]
+# "db/models/*.py" = ["TCH003"]
+# "test_*.py" = ["ARG", "PLR2004", "S", "S101"]
+
+[tool.ruff.format]
+# 코드 포맷팅 설정
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+preview = true
+
+
+[tool.bumpversion]
+allow_dirty = false
+commit = false
+commit_args = "--no-verify"
+current_version = "0.0.1"
+ignore_missing_files = false
+ignore_missing_version = false
+message = "Bump version: {current_version} → {new_version}"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+regex = false
+replace = "{new_version}"
+search = "{current_version}"
+serialize = ["{major}.{minor}.{patch}"]
+sign_tags = false
+tag = false
+tag_message = "Bump version: {current_version} → {new_version}"
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+replace = 'version = "{new_version}"'
+search = 'version = "{current_version}"'
+
+[[tool.bumpversion.files]]
+filename = "package.json"
+replace = '"version": "{new_version}"'
+search = '"version": "{current_version}"'
+
+[tool.slotscheck]
+strict-imports = false
+
+[tool.codespell]
+ignore-words-list = "alog,selectin,selectinload"
+skip = 'uv.lock, package-lock.json'
+
+[tool.coverage.report]
+exclude_lines = [
+    'if TYPE_CHECKING:',
+    'pragma: no cover',
+    "if __name__ == .__main__.:",
+    'def __repr__',
+    'if self\.debug:',
+    'if settings\.DEBUG',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'if 0:',
+    'class .*\bProtocol\):',
+    '@(abc\.)?abstractmethod',
+]
+omit = ["*/tests/*"]
+show_missing = true
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*", "**/*/migrations/**/*.py", "tools/*"]

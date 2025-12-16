@@ -35,7 +35,7 @@ dev = [
     "aiomysql>=0.3.2",
     "cryptography>=46.0.3",
     "matplotlib>=3.10.7",
-    "mypy>=1.18.2",
+    "basedpyright",
     "pre-commit>=4.4.0",
     "pymysql>=1.1.2",
     "pytest>=8.4.2",
@@ -95,20 +95,35 @@ known-third-party = ["pydantic", "sqlalchemy"]
 [tool.ruff.format]
 quote-style = 'single'
 
-[tool.mypy]
-plugins = ["pydantic.mypy"]
-strict = true
-exclude = ["tests/"]
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+include = ["base_repository", "tests"]
+exclude = [
+    ".history",
+    "scripts",
+    "docs",
+]
+typeCheckingMode = "basic"
+# Type checking configuration
+pythonVersion = "3.10"
+pythonPlatform = "All"
 
-[[tool.mypy.overrides]]
-module = "base-repository.tests.*"
-strict = false
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = false
-
-[[tool.mypy.overrides]]
-module = "base-repository.docs.*"
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
-disallow_untyped_calls = false
+# Report settings
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportOptionalMemberAccess = false
+reportOptionalCall = false
+reportOptionalIterable = false
+reportOptionalContextManager = false
+reportOptionalOperand = false
+reportGeneralTypeIssues = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportMissingParameterType = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryComparison = false
+reportConstantRedefinition = false
+reportAttributeAccessIssue = false
+reportIncompatibleVariableOverride = false

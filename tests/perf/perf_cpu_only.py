@@ -89,7 +89,7 @@ class ResultSQLModel(SQLModel, table=True):
       table=True로 매핑된 모델이어야 한다.
     """
 
-    __tablename__ = 'result_sqlmodel_bench'
+    __tablename__ = 'result_sqlmodel_bench'  # type: ignore
 
     id: int | None = Field(default=None, primary_key=True)
     item_id: int = Field()
@@ -156,16 +156,14 @@ class ResultCreateSchema(BaseModel):
 def cached_create_payloads_dict(n: int) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
     for i in range(n):
-        payloads.append(
-            {
-                'item_id': i,
-                'sub_category_id': i,
-                'result_value': str(i),
-                'is_abnormal': (i % 2 == 0),
-                'tenant_id': 1,
-                'checkup_id': 1,
-            }
-        )
+        payloads.append({
+            'item_id': i,
+            'sub_category_id': i,
+            'result_value': str(i),
+            'is_abnormal': (i % 2 == 0),
+            'tenant_id': 1,
+            'checkup_id': 1,
+        })
     return payloads
 
 
@@ -202,12 +200,10 @@ def cached_update_payloads_dict(n: int) -> list[dict[str, Any]]:
     """
     payloads: list[dict[str, Any]] = []
     for i in range(n):
-        payloads.append(
-            {
-                'result_value': f'updated-{i}',
-                'is_abnormal': bool(i % 2),
-            }
-        )
+        payloads.append({
+            'result_value': f'updated-{i}',
+            'is_abnormal': bool(i % 2),
+        })
     return payloads
 
 
